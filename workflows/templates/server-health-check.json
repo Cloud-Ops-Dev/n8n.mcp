@@ -1,0 +1,173 @@
+{
+  "name": "Server Health Check",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "name": "Schedule Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "privateKey",
+        "command": "uptime && df -h && free -m",
+        "host": "={{$env.AMD_HOST}}",
+        "user": "={{$env.AMD_SSH_USER}}",
+        "privateKey": "={{$env.AMD_SSH_KEY_PATH}}"
+      },
+      "name": "Check AMD Workstation",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "privateKey",
+        "command": "uptime && df -h && free -m",
+        "host": "={{$env.IBM_SERVER_IP}}",
+        "user": "={{$env.IBM_SSH_USER}}",
+        "privateKey": "={{$env.IBM_SSH_KEY_PATH}}"
+      },
+      "name": "Check IBM Cloud Server",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "privateKey",
+        "command": "uptime && df -h && free -m",
+        "host": "={{$env.AWS_SERVER_IP}}",
+        "user": "={{$env.AWS_SSH_USER}}",
+        "privateKey": "={{$env.AWS_SSH_KEY_PATH}}"
+      },
+      "name": "Check AWS EC2 Instance",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "const results = [];\n\nfor (const item of items) {\n  const server = item.json.server || 'unknown';\n  const output = item.json.stdout || '';\n  \n  results.push({\n    server: server,\n    timestamp: new Date().toISOString(),\n    status: output.includes('error') ? 'error' : 'healthy',\n    details: output\n  });\n}\n\nreturn results;"
+      },
+      "name": "Parse Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.status}}",
+              "value2": "error"
+            }
+          ]
+        }
+      },
+      "name": "Check for Errors",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "text": "🚨 Server Health Alert\\n\\nServer: {{$json.server}}\\nStatus: {{$json.status}}\\nTime: {{$json.timestamp}}\\n\\nDetails:\\n{{$json.details}}",
+        "additionalFields": {}
+      },
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    }
+  ],
+  "connections": {
+    "Schedule Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Check AMD Workstation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check IBM Cloud Server",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check AWS EC2 Instance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check AMD Workstation": {
+      "main": [
+        [
+          {
+            "node": "Parse Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check IBM Cloud Server": {
+      "main": [
+        [
+          {
+            "node": "Parse Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check AWS EC2 Instance": {
+      "main": [
+        [
+          {
+            "node": "Parse Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Results": {
+      "main": [
+        [
+          {
+            "node": "Check for Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Errors": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

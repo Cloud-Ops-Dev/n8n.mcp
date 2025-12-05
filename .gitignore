@@ -1,0 +1,42 @@
+# Environment variables
+.env
+*.env
+!.env.example
+
+# n8n data
+n8n-data/
+.n8n/
+
+# Docker volumes
+docker/volumes/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Credentials and secrets
+credentials/
+secrets/
+*.key
+*.pem
+*.crt
+
+# Node modules (if using local development)
+node_modules/
+package-lock.json
+yarn.lock

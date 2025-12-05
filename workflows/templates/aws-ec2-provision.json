@@ -1,0 +1,164 @@
+{
+  "name": "AWS EC2 Provisioning",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "instanceType": "t2.micro",
+        "imageId": "ami-0c55b159cbfafe1f0",
+        "additionalFields": {
+          "keyName": "my-key-pair",
+          "securityGroupIds": ["sg-xxxxxxxx"],
+          "subnetId": "subnet-xxxxxxxx",
+          "tags": {
+            "Name": "n8n-managed-server",
+            "Environment": "lab",
+            "ManagedBy": "n8n"
+          }
+        }
+      },
+      "name": "Create EC2 Instance",
+      "type": "n8n-nodes-base.aws",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "aws": {
+          "id": "1",
+          "name": "AWS Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Wait for instance to get public IP\nconst instanceId = $input.item.json.InstanceId;\nconst region = $env.AWS_DEFAULT_REGION;\n\nreturn [{\n  json: {\n    instanceId: instanceId,\n    region: region,\n    message: 'Instance created, waiting for public IP...'\n  }\n}];"
+      },
+      "name": "Extract Instance Info",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "name": "Wait for Instance",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "instanceId": "={{$json.instanceId}}"
+      },
+      "name": "Get Instance Details",
+      "type": "n8n-nodes-base.aws",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "credentials": {
+        "aws": {
+          "id": "1",
+          "name": "AWS Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "privateKey",
+        "command": "sudo apt update && sudo apt install -y docker.io && sudo systemctl start docker",
+        "host": "={{$json.PublicIpAddress}}",
+        "user": "ec2-user",
+        "privateKey": "={{$env.AWS_SSH_KEY_PATH}}"
+      },
+      "name": "Install Docker",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "text": "✅ AWS EC2 Instance Provisioned\\n\\nInstance ID: {{$json.instanceId}}\\nPublic IP: {{$json.PublicIpAddress}}\\nStatus: Running with Docker installed\\n\\nReady for deployment!"
+      },
+      "name": "Send Success Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create EC2 Instance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create EC2 Instance": {
+      "main": [
+        [
+          {
+            "node": "Extract Instance Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Instance Info": {
+      "main": [
+        [
+          {
+            "node": "Wait for Instance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Instance": {
+      "main": [
+        [
+          {
+            "node": "Get Instance Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Instance Details": {
+      "main": [
+        [
+          {
+            "node": "Install Docker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Install Docker": {
+      "main": [
+        [
+          {
+            "node": "Send Success Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
