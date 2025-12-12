@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MCP Server Configuration Script
-# Configures n8n-MCP for Claude Code integration
+# Configures n8n-MCP for MCP client integration
 
 set -e  # Exit on error
 
@@ -16,8 +16,8 @@ echo -e "${GREEN}MCP Configuration${NC}"
 echo -e "${GREEN}================================${NC}"
 echo ""
 
-# Check if Claude Code CLI is installed
-command -v claude >/dev/null 2>&1 || { echo -e "${RED}Error: Claude Code CLI is not installed${NC}" >&2; exit 1; }
+# Check if MCP client CLI is installed
+command -v mcp-cli >/dev/null 2>&1 || { echo -e "${RED}Error: MCP client CLI is not installed${NC}" >&2; exit 1; }
 
 # Load environment variables
 if [ -f "docker/.env" ]; then
@@ -45,7 +45,7 @@ else
     echo -e "${YELLOW}Creating .mcp.json configuration...${NC}"
 
     # Create MCP configuration
-    claude mcp add --scope project --transport stdio n8n-mcp \
+    mcp-cli mcp add --scope project --transport stdio n8n-mcp \
         --env MCP_MODE=stdio \
         --env LOG_LEVEL=error \
         --env DISABLE_CONSOLE_OUTPUT=true \
@@ -69,13 +69,13 @@ echo -e "   - Go to Settings → API"
 echo -e "   - Generate a new API key"
 echo -e "   - Add it to ${GREEN}docker/.env${NC} as N8N_API_KEY"
 echo ""
-echo -e "2. Restart Claude Code to load MCP server:"
-echo -e "   - Exit and restart your Claude Code session"
+echo -e "2. Restart MCP client to load MCP server:"
+echo -e "   - Exit and restart your MCP client session"
 echo ""
 echo -e "3. Verify MCP is working:"
-echo -e "   - In Claude Code, ask: 'What n8n nodes are available?'"
+echo -e "   - In MCP client, ask: 'What n8n nodes are available?'"
 echo ""
 echo -e "4. Update configuration if needed:"
-echo -e "   ${GREEN}claude mcp list${NC}   # List configured servers"
-echo -e "   ${GREEN}claude mcp remove n8n-mcp${NC}   # Remove if needed"
+echo -e "   ${GREEN}mcp-cli mcp list${NC}   # List configured servers"
+echo -e "   ${GREEN}mcp-cli mcp remove n8n-mcp${NC}   # Remove if needed"
 echo ""

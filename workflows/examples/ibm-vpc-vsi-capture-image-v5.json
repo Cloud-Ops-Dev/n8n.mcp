@@ -1,0 +1,415 @@
+{
+  "name": "IBM VPC VSI - Capture Image (v5 - with Stop)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "command": "check_output() { local dir=$1; local src=$2; out=$(docker run --rm -v \"$dir:/workspace\" -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); vsi=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.vsi_id?.value||'')\"); echo \"{\\\"status\\\":\\\"VSI_FOUND\\\",\\\"source\\\":\\\"$src\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"vsi_id\\\":\\\"$vsi\\\"}\"; exit 0; fi; return 1; }; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand ibm-vpc-ondemand && exit 0; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image ibm-vpc-from-image && exit 0; echo '{\"status\":\"NO_VSI\",\"message\":\"No active VSI found\"}'; exit 1"
+      },
+      "name": "Find Active VSI",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "find-vsi"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "vsi_id",
+              "value": "={{ JSON.parse($json.stdout).vsi_id }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ JSON.parse($json.stdout).source }}"
+            },
+            {
+              "name": "api_key",
+              "value": "hdUjtKbl4XTd-2vIjaiH6A2FPfW5yAGdBY7eZGQKyu42"
+            }
+          ]
+        }
+      },
+      "name": "Extract VSI ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "extract-vsi"
+    },
+    {
+      "parameters": {
+        "url": "https://iam.cloud.ibm.com/identity/token",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "urn:ibm:params:oauth:grant-type:apikey"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $json.api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Get IAM Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "id": "get-iam-token"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "access_token",
+              "value": "={{ $json.access_token }}"
+            },
+            {
+              "name": "vsi_id",
+              "value": "={{ $node[\"Extract VSI ID\"].json.vsi_id }}"
+            }
+          ]
+        }
+      },
+      "name": "Extract Token",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "extract-token"
+    },
+    {
+      "parameters": {
+        "url": "=https://us-south.iaas.cloud.ibm.com/v1/instances/{{ $json.vsi_id }}/actions?version=2025-12-08&generation=2",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"stop\"\n}",
+        "options": {}
+      },
+      "name": "Stop VSI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300],
+      "id": "stop-vsi"
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "name": "Wait for Stop",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1560, 300],
+      "id": "wait-stop",
+      "webhookId": "wait-for-stop"
+    },
+    {
+      "parameters": {
+        "url": "=https://us-south.iaas.cloud.ibm.com/v1/instances/{{ $node[\"Extract Token\"].json.vsi_id }}?version=2025-12-08&generation=2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $node[\"Extract Token\"].json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Get Instance Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 500],
+      "id": "get-instance"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "boot_volume_id",
+              "value": "={{ $json.boot_volume_attachment.volume.id }}"
+            },
+            {
+              "name": "instance_name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "image_name",
+              "value": "={{ $json.name }}-image-{{ new Date().toISOString().split('T')[0] }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $node[\"Extract Token\"].json.access_token }}"
+            }
+          ]
+        }
+      },
+      "name": "Extract Boot Volume",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [460, 500],
+      "id": "extract-volume"
+    },
+    {
+      "parameters": {
+        "url": "https://us-south.iaas.cloud.ibm.com/v1/images?version=2025-12-08&generation=2",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $json.image_name }}\",\n  \"source_volume\": {\n    \"id\": \"{{ $json.boot_volume_id }}\"\n  }\n}",
+        "options": {}
+      },
+      "name": "Create Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 500],
+      "id": "create-image"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "Image Created Successfully"
+            },
+            {
+              "name": "image_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "image_name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "image_status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "crn",
+              "value": "={{ $json.crn }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $json.created_at }}"
+            },
+            {
+              "name": "message",
+              "value": "=Custom image is being created. Status: {{ $json.status }}. VSI was stopped for image capture."
+            },
+            {
+              "name": "note",
+              "value": "Image will be available when status changes to 'available' (may take 5-10 minutes). VSI is currently STOPPED - use the tear-down workflow to clean up."
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 500],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"IBM VPC VSI - Capture Image (v5)\" \"SUCCESS\" \"Image ID: {{ $node[\"Format Results\"].json.image_id }}, Name: {{ $node[\"Format Results\"].json.image_name }}, Status: {{ $node[\"Format Results\"].json.image_status }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1150, 500],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## IBM VPC VSI - Capture Image (v5)\n\nStops VSI, creates image, leaves VSI stopped.\n\n**What it does:**\n1. Finds active VSI\n2. Gets IAM token\n3. **Stops the VSI**\n4. Waits 30 seconds\n5. Gets instance details\n6. Creates custom image\n\n**IMPORTANT:**\n- VSI will be STOPPED after this workflow\n- Image takes 5-10 min to become available\n- Save the image_id from results!\n- Use tear-down workflow to delete stopped VSI",
+        "height": 380,
+        "width": 400
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 660],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Find Active VSI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Active VSI": {
+      "main": [
+        [
+          {
+            "node": "Extract VSI ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract VSI ID": {
+      "main": [
+        [
+          {
+            "node": "Get IAM Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IAM Token": {
+      "main": [
+        [
+          {
+            "node": "Extract Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Token": {
+      "main": [
+        [
+          {
+            "node": "Stop VSI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop VSI": {
+      "main": [
+        [
+          {
+            "node": "Wait for Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Stop": {
+      "main": [
+        [
+          {
+            "node": "Get Instance Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Instance Details": {
+      "main": [
+        [
+          {
+            "node": "Extract Boot Volume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Boot Volume": {
+      "main": [
+        [
+          {
+            "node": "Create Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["ibm-cloud", "vpc", "image-capture", "fixed"]
+}

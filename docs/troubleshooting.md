@@ -324,7 +324,7 @@ docker-compose restart
 ### MCP server not found
 
 **Symptoms**:
-Claude can't access n8n tools
+MCP can't access n8n tools
 
 **Diagnosis**:
 ```bash
@@ -332,7 +332,7 @@ Claude can't access n8n tools
 cat .mcp.json
 
 # List MCP servers
-claude mcp list
+mcp list
 ```
 
 **Solution**:
@@ -343,7 +343,7 @@ claude mcp list
 # Verify configuration
 cat .mcp.json
 
-# Restart Claude Code session
+# Restart MCP client session
 ```
 
 ---
@@ -394,7 +394,7 @@ cat .mcp.json | grep N8N_API_URL
 
 **Symptoms**:
 ```
-JSON parsing errors in Claude Desktop
+JSON parsing errors in MCP application
 ```
 
 **Solution**:
@@ -409,7 +409,7 @@ cat .mcp.json
 }
 
 # If missing, reconfigure
-claude mcp remove n8n-mcp
+mcp remove n8n-mcp
 ./scripts/configure-mcp.sh
 ```
 

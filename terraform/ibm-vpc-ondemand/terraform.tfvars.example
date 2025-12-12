@@ -1,0 +1,9 @@
+# Example terraform.tfvars
+# Copy to terraform.tfvars and fill in your values
+
+ibm_api_key      = "your-ibm-cloud-api-key-here"
+ibm_region       = "us-south"
+ssh_key_name     = "ibm-lab-key"
+ssh_key_path     = "/home/clay/Documents/Security/ibm_cloud_vsi_key"
+instance_name    = "n8n-lab-vsi-ondemand"
+instance_profile = "cx2-2x4"

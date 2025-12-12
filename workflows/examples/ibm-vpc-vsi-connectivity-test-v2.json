@@ -1,0 +1,325 @@
+{
+  "name": "IBM VPC VSI - Connectivity Test (v2)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "command": "check_output() { local dir=$1; local src=$2; out=$(docker run --rm -v \"$dir:/workspace\" -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); vsi=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.vsi_id?.value||'')\"); echo \"{\\\"status\\\":\\\"VSI_FOUND\\\",\\\"source\\\":\\\"$src\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"vsi_id\\\":\\\"$vsi\\\"}\"; exit 0; fi; return 1; }; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand ibm-vpc-ondemand && exit 0; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image ibm-vpc-from-image && exit 0; echo '{\"status\":\"NO_VSI\",\"message\":\"No active VSI found\"}'; exit 1"
+      },
+      "name": "Find Active VSI",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "find-vsi"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ JSON.parse($json.stdout).status }}",
+              "value2": "VSI_FOUND"
+            }
+          ]
+        }
+      },
+      "name": "VSI Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "vsi-check"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "public_ip",
+              "value": "={{ JSON.parse($json.stdout).public_ip }}"
+            },
+            {
+              "name": "private_ip",
+              "value": "={{ JSON.parse($json.stdout).private_ip }}"
+            },
+            {
+              "name": "vsi_id",
+              "value": "={{ JSON.parse($json.stdout).vsi_id }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ JSON.parse($json.stdout).source }}"
+            }
+          ]
+        }
+      },
+      "name": "Extract VSI Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 200],
+      "id": "extract-vsi"
+    },
+    {
+      "parameters": {
+        "command": "echo 'SSH Connection Successful to IBM VPC VSI' && hostname && uptime",
+        "host": "={{ $json.public_ip }}"
+      },
+      "name": "Test SSH Connection",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1120, 200],
+      "id": "ssh-test",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "IBM VPC SSH Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "docker --version 2>/dev/null || echo 'Docker not installed yet (cloud-init may still be running)'",
+        "host": "={{ $input.first().json.public_ip }}"
+      },
+      "name": "Check Docker",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1340, 200],
+      "id": "check-docker",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "IBM VPC SSH Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "df -h / && echo '---' && free -h && echo '---' && cat /etc/os-release | grep PRETTY_NAME",
+        "host": "={{ $input.first().json.public_ip }}"
+      },
+      "name": "Check System Info",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1560, 200],
+      "id": "system-info",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "IBM VPC SSH Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "server",
+              "value": "IBM VPC VSI"
+            },
+            {
+              "name": "terraform_source",
+              "value": "={{ $node[\"Extract VSI Info\"].json.source }}"
+            },
+            {
+              "name": "public_ip",
+              "value": "={{ $node[\"Extract VSI Info\"].json.public_ip }}"
+            },
+            {
+              "name": "private_ip",
+              "value": "={{ $node[\"Extract VSI Info\"].json.private_ip }}"
+            },
+            {
+              "name": "vsi_id",
+              "value": "={{ $node[\"Extract VSI Info\"].json.vsi_id }}"
+            },
+            {
+              "name": "connectivity_status",
+              "value": "SUCCESS"
+            },
+            {
+              "name": "ssh_output",
+              "value": "={{ $node[\"Test SSH Connection\"].json.stdout }}"
+            },
+            {
+              "name": "docker_installed",
+              "value": "={{ !$node[\"Check Docker\"].json.stdout.includes('not installed') }}"
+            },
+            {
+              "name": "docker_output",
+              "value": "={{ $node[\"Check Docker\"].json.stdout }}"
+            },
+            {
+              "name": "system_output",
+              "value": "={{ $node[\"Check System Info\"].json.stdout }}"
+            },
+            {
+              "name": "summary",
+              "value": "={{ !$node[\"Check Docker\"].json.stdout.includes('not installed') ? 'IBM VPC VSI connectivity test completed - Docker available' : 'IBM VPC VSI connectivity test completed - Docker still installing' }}"
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1780, 200],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"IBM VPC VSI - Connectivity Test (v2)\" \"SUCCESS\" \"VSI: {{ $node[\"Format Results\"].json.vsi_id }}, IP: {{ $node[\"Format Results\"].json.public_ip }}, Status: {{ $node[\"Format Results\"].json.connectivity_status }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [2000, 200],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "error",
+              "value": "No active VSI found"
+            },
+            {
+              "name": "message",
+              "value": "Run the spin-up workflow first to create a VSI"
+            }
+          ]
+        }
+      },
+      "name": "No VSI Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 400],
+      "id": "no-vsi-error"
+    },
+    {
+      "parameters": {
+        "content": "## IBM VPC VSI - Connectivity Test (v2)\n\nFixed version using bash script instead of Code nodes.\n\n**Smart Detection:**\n- Checks both Terraform directories\n- Works with fresh VSI (ondemand)\n- Works with image-based VSI (from-image)\n- Automatically finds active VSI\n\n**What it does:**\n1. Runs script to find active VSI\n2. Tests SSH connectivity\n3. Checks Docker installation status\n4. Retrieves system info\n\n**Requirements:**\n- VSI must be running\n- SSH key credential: \"IBM VPC SSH Key\"",
+        "height": 440,
+        "width": 400
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 520],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Find Active VSI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Active VSI": {
+      "main": [
+        [
+          {
+            "node": "VSI Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VSI Found?": {
+      "main": [
+        [
+          {
+            "node": "Extract VSI Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No VSI Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract VSI Info": {
+      "main": [
+        [
+          {
+            "node": "Test SSH Connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test SSH Connection": {
+      "main": [
+        [
+          {
+            "node": "Check Docker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Docker": {
+      "main": [
+        [
+          {
+            "node": "Check System Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check System Info": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["ibm-cloud", "vpc", "connectivity-test", "fixed"]
+}

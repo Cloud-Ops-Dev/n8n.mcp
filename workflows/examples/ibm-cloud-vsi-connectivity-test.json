@@ -1,0 +1,141 @@
+{
+  "name": "IBM Cloud VSI - Connectivity Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "manual-trigger-ibm"
+    },
+    {
+      "parameters": {
+        "command": "echo 'SSH Connection Successful to IBM Cloud VSI' && hostname && uptime"
+      },
+      "name": "Test IBM SSH Connection",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "id": "ssh-test-ibm",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "IBM Cloud VSI Ubuntu"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "docker --version 2>/dev/null || echo 'Docker not installed'"
+      },
+      "name": "Check Docker on IBM",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "id": "docker-check-ibm",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "IBM Cloud VSI Ubuntu"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "df -h / && echo '---' && free -h && echo '---' && cat /etc/os-release | grep PRETTY_NAME"
+      },
+      "name": "Check IBM System Info",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "id": "system-check-ibm",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "IBM Cloud VSI Ubuntu"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Collect all results from the workflow\nconst sshTest = $node[\"Test IBM SSH Connection\"].json;\nconst dockerCheck = $node[\"Check Docker on IBM\"].json;\nconst systemInfo = $node[\"Check IBM System Info\"].json;\n\nconst dockerInstalled = !dockerCheck.stdout.includes('not installed');\n\nreturn {\n  json: {\n    timestamp: new Date().toISOString(),\n    server: 'IBM Cloud VSI Ubuntu',\n    ip: '169.48.107.199',\n    provider: 'IBM Cloud',\n    connectivity: {\n      status: 'SUCCESS',\n      output: sshTest.stdout\n    },\n    docker: {\n      installed: dockerInstalled,\n      output: dockerCheck.stdout\n    },\n    system: {\n      output: systemInfo.stdout\n    },\n    summary: dockerInstalled ? 'IBM Cloud VSI connectivity test completed - Docker available' : 'IBM Cloud VSI connectivity test completed - Docker not installed'\n  }\n};"
+      },
+      "name": "Summarize IBM Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "id": "summary-ibm"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"IBM Cloud VSI - Connectivity Test\" \"SUCCESS\" \"Server: {{ $json.server }}, IP: {{ $json.ip }}, Status: {{ $json.connectivity.status }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "id": "log-execution"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Test IBM SSH Connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test IBM SSH Connection": {
+      "main": [
+        [
+          {
+            "node": "Check Docker on IBM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Docker on IBM": {
+      "main": [
+        [
+          {
+            "node": "Check IBM System Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check IBM System Info": {
+      "main": [
+        [
+          {
+            "node": "Summarize IBM Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize IBM Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

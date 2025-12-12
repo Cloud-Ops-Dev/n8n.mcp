@@ -1,0 +1,265 @@
+{
+  "name": "IBM VPC VSI - Spin Up from Image (v3)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "image_id",
+              "value": "r006-1ca78827-3716-4cf0-bb97-302a5babc1c0"
+            },
+            {
+              "name": "api_key",
+              "value": "hdUjtKbl4XTd-2vIjaiH6A2FPfW5yAGdBY7eZGQKyu42"
+            },
+            {
+              "name": "region",
+              "value": "us-south"
+            },
+            {
+              "name": "ssh_key_name",
+              "value": "lab-key"
+            },
+            {
+              "name": "instance_name",
+              "value": "n8n-lab-vsi-from-image"
+            },
+            {
+              "name": "instance_profile",
+              "value": "cx2-2x4"
+            }
+          ]
+        }
+      },
+      "name": "Set Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "set-config"
+    },
+    {
+      "parameters": {
+        "command": "=cat > /terraform/ibm-vpc-from-image/terraform.tfvars <<'EOF'\n# IBM VPC from Custom Image Configuration\nibm_api_key      = \"{{ $json.api_key }}\"\nibm_region       = \"{{ $json.region }}\"\nssh_key_name     = \"{{ $json.ssh_key_name }}\"\nssh_key_path     = \"/home/clay/.ssh/id_ed25519\"\ninstance_name    = \"{{ $json.instance_name }}\"\ninstance_profile = \"{{ $json.instance_profile }}\"\ncustom_image_id  = \"{{ $json.image_id }}\"\nEOF"
+      },
+      "name": "Write Terraform Config",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "write-config"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest init"
+      },
+      "name": "Terraform Init",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "terraform-init"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest plan -out=tfplan"
+      },
+      "name": "Terraform Plan",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "terraform-plan"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest apply -auto-approve tfplan"
+      },
+      "name": "Terraform Apply",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "id": "terraform-apply"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest output -json"
+      },
+      "name": "Get Outputs",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 500],
+      "id": "terraform-output"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "VSI Provisioned Successfully from Custom Image"
+            },
+            {
+              "name": "vsi_id",
+              "value": "={{ JSON.parse($json.stdout).vsi_id.value }}"
+            },
+            {
+              "name": "public_ip",
+              "value": "={{ JSON.parse($json.stdout).public_ip.value }}"
+            },
+            {
+              "name": "private_ip",
+              "value": "={{ JSON.parse($json.stdout).private_ip.value }}"
+            },
+            {
+              "name": "ssh_command",
+              "value": "={{ JSON.parse($json.stdout).ssh_command.value }}"
+            },
+            {
+              "name": "image_id_used",
+              "value": "={{ JSON.parse($json.stdout).image_id_used.value }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "message",
+              "value": "IBM VPC VSI is ready! Booted from your custom image with Docker pre-installed."
+            },
+            {
+              "name": "note",
+              "value": "Verify README.md exists: ssh ubuntu@{{ JSON.parse($node[\"Get Outputs\"].json.stdout).public_ip.value }} 'cat /home/ubuntu/README.md'"
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [680, 500],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"IBM VPC VSI - Spin Up from Image (v2)\" \"SUCCESS\" \"VSI ID: {{ $json.vsi_id }}, IP: {{ $json.public_ip }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 500],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## IBM VPC VSI - Spin Up from Image (v2)\n\n**Pre-configured with your image ID:**\nr006-1ca78827-3716-4cf0-bb97-302a5babc1c0\n\n**What it does:**\n1. Creates terraform.tfvars with image ID\n2. Provisions VPC infrastructure\n3. Spins up VSI from custom image\n4. Logs execution to common log file\n5. Returns VSI details\n\n**Benefits:**\n- Faster provisioning (~2-3 min)\n- Docker already installed\n- README.md preserved\n- No cloud-init needed\n- Execution logging!\n\n**After running:**\nCheck README.md to verify image worked:\nssh ubuntu@<IP> 'cat /home/ubuntu/README.md'\n\nShould show timestamp: 2025-12-09_03:00:19\n\n**Note:** Update 'IBM VPC SSH Key' credential\nwith new IP for connectivity tests.",
+        "height": 500,
+        "width": 400
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 700],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Configuration": {
+      "main": [
+        [
+          {
+            "node": "Write Terraform Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Terraform Config": {
+      "main": [
+        [
+          {
+            "node": "Terraform Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terraform Init": {
+      "main": [
+        [
+          {
+            "node": "Terraform Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terraform Plan": {
+      "main": [
+        [
+          {
+            "node": "Terraform Apply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terraform Apply": {
+      "main": [
+        [
+          {
+            "node": "Get Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Outputs": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["ibm-cloud", "vpc", "from-image", "fixed"]
+}

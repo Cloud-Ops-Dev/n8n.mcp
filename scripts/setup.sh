@@ -21,11 +21,11 @@ echo -e "${YELLOW}Checking prerequisites...${NC}"
 
 command -v docker >/dev/null 2>&1 || { echo -e "${RED}Error: Docker is not installed${NC}" >&2; exit 1; }
 command -v docker-compose >/dev/null 2>&1 || { echo -e "${RED}Error: Docker Compose is not installed${NC}" >&2; exit 1; }
-command -v claude >/dev/null 2>&1 || { echo -e "${RED}Error: Claude Code CLI is not installed${NC}" >&2; exit 1; }
+command -v mcp-cli >/dev/null 2>&1 || { echo -e "${RED}Error: MCP client CLI is not installed${NC}" >&2; exit 1; }
 
 echo -e "${GREEN}✓ Docker installed${NC}"
 echo -e "${GREEN}✓ Docker Compose installed${NC}"
-echo -e "${GREEN}✓ Claude Code CLI installed${NC}"
+echo -e "${GREEN}✓ MCP client CLI installed${NC}"
 echo ""
 
 # Setup environment file

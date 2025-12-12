@@ -64,7 +64,7 @@ This directory contains workflow templates for managing multi-cloud infrastructu
 
 ### Method 2: Via API (with MCP)
 ```bash
-# Using Claude Code with n8n-MCP
+# Using MCP client with n8n-MCP
 # Ask: "Import the server-health-check workflow from workflows/templates/"
 ```
 
@@ -75,11 +75,11 @@ docker cp workflows/templates/server-health-check.json n8n:/home/node/.n8n/
 
 ## Creating Custom Workflows
 
-### Using Claude Code + MCP
+### Using MCP client + MCP
 The n8n-MCP integration allows you to use AI to build workflows:
 
 ```
-Ask Claude: "Create an n8n workflow that backs up my AMD workstation to AWS S3 every night at 2am"
+Ask MCP: "Create an n8n workflow that backs up my AMD workstation to AWS S3 every night at 2am"
 ```
 
 ### Manually

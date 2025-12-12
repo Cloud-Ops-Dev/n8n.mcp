@@ -1,0 +1,141 @@
+{
+  "name": "AMD Workstation - Connectivity Test (with Credentials)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "manual-trigger-1"
+    },
+    {
+      "parameters": {
+        "command": "echo 'SSH Connection Successful' && hostname && uptime"
+      },
+      "name": "Test SSH Connection",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "id": "ssh-test-1",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AMD Workstation (claymore)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "docker --version && docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'"
+      },
+      "name": "Check Docker Status",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "id": "docker-check-1",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AMD Workstation (claymore)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "df -h / && echo '---' && free -h"
+      },
+      "name": "Check System Resources",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "id": "resources-check-1",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AMD Workstation (claymore)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Collect all results from the workflow\nconst sshTest = $node[\"Test SSH Connection\"].json;\nconst dockerCheck = $node[\"Check Docker Status\"].json;\nconst resourcesCheck = $node[\"Check System Resources\"].json;\n\nreturn {\n  json: {\n    timestamp: new Date().toISOString(),\n    server: 'AMD Workstation (claymore)',\n    ip: '192.168.1.43',\n    connectivity: {\n      status: 'SUCCESS',\n      output: sshTest.stdout\n    },\n    docker: {\n      available: !dockerCheck.stderr,\n      output: dockerCheck.stdout || dockerCheck.stderr\n    },\n    resources: {\n      output: resourcesCheck.stdout\n    },\n    summary: 'All connectivity tests completed'\n  }\n};"
+      },
+      "name": "Summarize Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "id": "summary-1"
+    },
+  {
+    "parameters": {
+      "command": "=/scripts/workflow-logger.sh \"AMD Workstation - Connectivity Test\" \"SUCCESS\" \"Server: {{ $json.server }}, Status: {{ $json.connectivity.status }}\""
+    },
+    "name": "Log Execution",
+    "type": "n8n-nodes-base.executeCommand",
+    "typeVersion": 1,
+    "position": [1250, 300],
+    "id": "log-execution"
+  }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Test SSH Connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test SSH Connection": {
+      "main": [
+        [
+          {
+            "node": "Check Docker Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Docker Status": {
+      "main": [
+        [
+          {
+            "node": "Check System Resources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check System Resources": {
+      "main": [
+        [
+          {
+            "node": "Summarize Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

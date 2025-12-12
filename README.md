@@ -1,10 +1,10 @@
 # n8n + MCP Multi-Cloud Server Management Lab
 
-An AI-powered infrastructure orchestration lab that combines n8n automation with Model Context Protocol (MCP) to build, deploy, and manage servers across multiple cloud providers.
+An infrastructure orchestration lab that combines n8n automation with Model Context Protocol (MCP) to build, deploy, and manage servers across multiple cloud providers.
 
 ## 🎯 Project Overview
 
-This lab demonstrates how to use AI-assisted automation to manage infrastructure across:
+This lab demonstrates automated infrastructure management across:
 - **Local AMD Workstation** (Docker-based development)
 - **IBM Cloud** (Enterprise cloud infrastructure)
 - **AWS EC2** (Public cloud compute)
@@ -16,10 +16,10 @@ This lab demonstrates how to use AI-assisted automation to manage infrastructure
 │         Laptop (I7, 32GB RAM - Control Plane)   │
 ├─────────────────────────────────────────────────┤
 │  Docker Containers:                             │
-│  ┌──────────┐  ┌─────────────┐  ┌────────────┐ │
-│  │   n8n    │◄─┤  n8n-MCP    │◄─┤  Claude    │ │
-│  │ (5678)   │  │  Server     │  │  Code      │ │
-│  └────┬─────┘  └─────────────┘  └────────────┘ │
+│  ┌──────────┐  ┌─────────────┐                  │
+│  │   n8n    │◄─┤  n8n-MCP    │                  │
+│  │ (5678)   │  │  Server     │                  │
+│  └────┬─────┘  └─────────────┘                  │
 └───────┼────────────────────────────────────────┘
         │
         │ n8n Workflows Manage:
@@ -32,7 +32,7 @@ This lab demonstrates how to use AI-assisted automation to manage infrastructure
 
 ### Prerequisites
 
-- **Laptop**: Docker, Docker Compose, Claude Code CLI
+- **Laptop**: Docker, Docker Compose
 - **Cloud Accounts**: IBM Cloud, AWS (with API credentials)
 - **Network**: SSH access to AMD workstation
 
@@ -40,7 +40,6 @@ This lab demonstrates how to use AI-assisted automation to manage infrastructure
 
 1. **Clone the repository**
    ```bash
-   cd /home/clay/Documents/GitHub
    git clone <your-repo-url> n8n.mcp
    cd n8n.mcp
    ```
@@ -57,12 +56,7 @@ This lab demonstrates how to use AI-assisted automation to manage infrastructure
    docker-compose up -d
    ```
 
-4. **Configure MCP with Claude Code**
-   ```bash
-   ./scripts/configure-mcp.sh
-   ```
-
-5. **Access n8n**
+4. **Access n8n**
    Open http://localhost:5678
 
 ## 📚 Documentation
@@ -77,7 +71,7 @@ This lab demonstrates how to use AI-assisted automation to manage infrastructure
 ### Docker Services
 - **n8n**: Workflow automation engine
 - **PostgreSQL**: n8n database backend
-- **n8n-MCP**: AI integration via Model Context Protocol
+- **n8n-MCP**: MCP integration server
 
 ### Workflow Templates
 - Server provisioning (AWS EC2, IBM Cloud)
@@ -94,37 +88,37 @@ This lab demonstrates how to use AI-assisted automation to manage infrastructure
 ## 🎓 Learning Objectives
 
 1. **n8n Automation**: Build complex workflows for infrastructure management
-2. **MCP Integration**: Use AI to design and modify automation
+2. **MCP Integration**: Programmatic workflow design and modification
 3. **Multi-Cloud Operations**: Manage resources across providers
 4. **Docker Orchestration**: Container-based service deployment
 5. **GitOps Practices**: Version-controlled infrastructure automation
 
 ## 📋 Project Phases
 
-### Phase 1: Foundation (Current)
+### Phase 1: Foundation ✅
 - ✅ Docker environment setup
 - ✅ n8n + MCP integration
-- ⬜ Basic server connectivity tests
+- ✅ Server connectivity tests
 
-### Phase 2: Cloud Integration
-- ⬜ AWS EC2 provisioning workflows
-- ⬜ IBM Cloud server management
-- ⬜ SSH key management
-- ⬜ Ansible integration
+### Phase 2: Cloud Integration ✅
+- ✅ AWS EC2 provisioning workflows
+- ✅ IBM Cloud server management
+- ✅ SSH key management
+- ✅ Terraform integration
 
-### Phase 3: Advanced Operations
-- ⬜ Monitoring and alerting
-- ⬜ Log aggregation
-- ⬜ Automated backup/restore
-- ⬜ Multi-step orchestrations
+### Phase 3: Advanced Operations ✅
+- ✅ Monitoring and health checks
+- ✅ Log aggregation
+- ✅ Automated provisioning/teardown
+- ✅ Multi-step orchestrations
 
 ## 🛠️ Technology Stack
 
-- **Automation**: n8n, Ansible
-- **AI Integration**: Claude Code, MCP
+- **Automation**: n8n, Terraform, Ansible
+- **Integration**: MCP (Model Context Protocol)
 - **Containers**: Docker, Docker Compose
 - **Cloud Providers**: AWS, IBM Cloud
-- **Languages**: JavaScript (n8n), Bash (scripting)
+- **Languages**: JavaScript (n8n), Bash (scripting), HCL (Terraform)
 
 ## 📝 License
 

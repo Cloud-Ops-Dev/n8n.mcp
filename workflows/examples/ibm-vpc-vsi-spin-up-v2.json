@@ -1,0 +1,188 @@
+{
+  "name": "IBM VPC VSI - Spin Up (v2 - Fixed)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest init"
+      },
+      "name": "Terraform Init",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "terraform-init"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest plan -out=tfplan"
+      },
+      "name": "Terraform Plan",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "terraform-plan"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest apply -auto-approve tfplan"
+      },
+      "name": "Terraform Apply",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "terraform-apply"
+    },
+    {
+      "parameters": {
+        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest output -json"
+      },
+      "name": "Get Outputs",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "terraform-output"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "VSI Provisioned Successfully"
+            },
+            {
+              "name": "vsi_id",
+              "value": "={{ JSON.parse($json.stdout).vsi_id.value }}"
+            },
+            {
+              "name": "public_ip",
+              "value": "={{ JSON.parse($json.stdout).public_ip.value }}"
+            },
+            {
+              "name": "private_ip",
+              "value": "={{ JSON.parse($json.stdout).private_ip.value }}"
+            },
+            {
+              "name": "ssh_command",
+              "value": "={{ JSON.parse($json.stdout).ssh_command.value }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "message",
+              "value": "IBM VPC VSI is ready! Docker is being installed via cloud-init (may take 2-3 minutes)."
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"IBM VPC VSI - Spin Up (v2)\" \"SUCCESS\" \"VSI ID: {{ $node[\"Format Results\"].json.vsi_id }}, IP: {{ $node[\"Format Results\"].json.public_ip }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 500],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## IBM VPC VSI - Spin Up (v2)\n\n**What it does:**\n1. Runs Terraform in Docker\n2. Creates VPC infrastructure\n3. Provisions VSI with Ubuntu 22.04\n4. Installs Docker via cloud-init\n5. Logs execution to common log file\n6. Returns VSI details\n\n**Resources Created:**\n- VPC, Subnet, Security Group\n- Public Gateway & Floating IP\n- VSI Instance\n\n**Time:** ~3-5 minutes\n**Cost:** ~$0.09/hour\n\n**Note:** Update 'IBM VPC SSH Key' credential\nwith new IP for connectivity tests.",
+        "height": 440,
+        "width": 400
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 700],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Terraform Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terraform Init": {
+      "main": [
+        [
+          {
+            "node": "Terraform Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terraform Plan": {
+      "main": [
+        [
+          {
+            "node": "Terraform Apply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terraform Apply": {
+      "main": [
+        [
+          {
+            "node": "Get Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Outputs": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["ibm-cloud", "vpc", "terraform", "fixed"]
+}

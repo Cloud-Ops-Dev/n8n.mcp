@@ -13,14 +13,14 @@ This lab demonstrates an AI-powered, multi-cloud infrastructure orchestration sy
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │              Claude Code CLI                         │  │
+│  │              MCP client CLI                         │  │
 │  │  - User interface for AI interaction                 │  │
 │  │  - MCP client for n8n integration                    │  │
 │  └───────────────────┬──────────────────────────────────┘  │
 │                      │ MCP Protocol (stdio)                │
 │  ┌───────────────────▼──────────────────────────────────┐  │
 │  │           n8n-MCP Server (npx)                       │  │
-│  │  - Exposes n8n API to Claude                         │  │
+│  │  - Exposes n8n API to MCP                         │  │
 │  │  - 543 node types with documentation                 │  │
 │  │  - 2,700+ workflow templates                         │  │
 │  └───────────────────┬──────────────────────────────────┘  │
@@ -57,7 +57,7 @@ This lab demonstrates an AI-powered, multi-cloud infrastructure orchestration sy
 
 ## Component Details
 
-### 1. Claude Code CLI
+### 1. MCP client CLI
 **Purpose**: AI-powered development interface
 
 **Capabilities**:
@@ -67,13 +67,13 @@ This lab demonstrates an AI-powered, multi-cloud infrastructure orchestration sy
 - Documentation lookup
 
 **Technology**:
-- Claude AI (Anthropic)
+- MCP AI (Anthropic)
 - MCP client integration
 
 ---
 
 ### 2. n8n-MCP Server
-**Purpose**: Bridge between Claude and n8n
+**Purpose**: Bridge between MCP and n8n
 
 **Capabilities**:
 - Query n8n node documentation
@@ -180,11 +180,11 @@ This lab demonstrates an AI-powered, multi-cloud infrastructure orchestration sy
 
 ### Workflow Creation Flow
 ```
-User → Claude Code → MCP → n8n-MCP → n8n API → PostgreSQL
+User → MCP client → MCP → n8n-MCP → n8n API → PostgreSQL
 ```
 
 1. User describes workflow in natural language
-2. Claude Code interprets intent
+2. MCP client interprets intent
 3. MCP protocol transmits request
 4. n8n-MCP translates to n8n API calls
 5. n8n creates/modifies workflow
@@ -302,7 +302,7 @@ Trigger → n8n → Target Server → Response → n8n → Action
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| AI Interface | Claude Code | User interaction |
+| AI Interface | MCP client | User interaction |
 | AI Protocol | MCP | AI-to-tool communication |
 | Automation | n8n | Workflow orchestration |
 | Database | PostgreSQL | Data persistence |
@@ -318,7 +318,7 @@ Trigger → n8n → Target Server → Response → n8n → Action
 
 1. **Infrastructure as Code**: All configs in version control
 2. **Automation First**: Minimize manual operations
-3. **AI-Assisted**: Leverage Claude for complex tasks
+3. **AI-Assisted**: Leverage MCP for complex tasks
 4. **Security by Default**: Credentials encrypted, keys required
 5. **Observable**: Comprehensive logging and monitoring
 6. **Resilient**: Error handling and retry logic

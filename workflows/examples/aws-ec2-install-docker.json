@@ -1,0 +1,303 @@
+{
+  "name": "AWS EC2 - Install Docker",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "id": "manual-trigger-install"
+    },
+    {
+      "parameters": {
+        "command": "sudo apt-get update"
+      },
+      "name": "Update Package Lists",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "id": "update-packages",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "sudo apt-get install -y ca-certificates curl gnupg lsb-release"
+      },
+      "name": "Install Prerequisites",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "id": "install-prereqs",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "sudo install -m 0755 -d /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && sudo chmod a+r /etc/apt/keyrings/docker.gpg"
+      },
+      "name": "Add Docker GPG Key",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "id": "add-gpg-key",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+      },
+      "name": "Add Docker Repository",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "id": "add-repo",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "sudo apt-get update"
+      },
+      "name": "Update After Adding Repo",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [250, 500],
+      "id": "update-again",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+      },
+      "name": "Install Docker",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 500],
+      "id": "install-docker",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "sudo usermod -aG docker ubuntu"
+      },
+      "name": "Add User to Docker Group",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [650, 500],
+      "id": "add-user-docker",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "sudo systemctl start docker && sudo systemctl enable docker"
+      },
+      "name": "Start Docker Service",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [850, 500],
+      "id": "start-docker",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "docker --version && echo '---' && sudo docker ps && echo '---' && sudo systemctl status docker --no-pager | head -5"
+      },
+      "name": "Verify Docker Installation",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [1050, 500],
+      "id": "verify-docker",
+      "credentials": {
+        "ssh": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const verifyOutput = $node[\"Verify Docker Installation\"].json;\n\nreturn {\n  json: {\n    timestamp: new Date().toISOString(),\n    server: 'AWS EC2 Ubuntu Instance',\n    ip: '3.16.216.114',\n    action: 'Docker Installation',\n    status: 'SUCCESS',\n    verification: verifyOutput.stdout,\n    message: 'Docker has been successfully installed and started on AWS EC2',\n    next_steps: [\n      'Docker is now running',\n      'User ubuntu added to docker group (requires logout/login to take effect without sudo)',\n      'Docker service enabled to start on boot',\n      'Re-run the connectivity test workflow to verify'\n    ]\n  }\n};"
+      },
+      "name": "Installation Summary",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [250, 700],
+      "id": "summary-install"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"AWS EC2 - Install Docker\" \"SUCCESS\" \"Server: {{ $json.server }}, IP: {{ $json.ip }}, Action: {{ $json.action }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 700],
+      "id": "log-execution"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Update Package Lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Package Lists": {
+      "main": [
+        [
+          {
+            "node": "Install Prerequisites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Install Prerequisites": {
+      "main": [
+        [
+          {
+            "node": "Add Docker GPG Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Docker GPG Key": {
+      "main": [
+        [
+          {
+            "node": "Add Docker Repository",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Docker Repository": {
+      "main": [
+        [
+          {
+            "node": "Update After Adding Repo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update After Adding Repo": {
+      "main": [
+        [
+          {
+            "node": "Install Docker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Install Docker": {
+      "main": [
+        [
+          {
+            "node": "Add User to Docker Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add User to Docker Group": {
+      "main": [
+        [
+          {
+            "node": "Start Docker Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Docker Service": {
+      "main": [
+        [
+          {
+            "node": "Verify Docker Installation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Docker Installation": {
+      "main": [
+        [
+          {
+            "node": "Installation Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Installation Summary": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

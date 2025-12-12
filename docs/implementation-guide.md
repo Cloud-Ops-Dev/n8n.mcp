@@ -50,11 +50,11 @@ cd /home/clay/Documents/GitHub/n8n.mcp
 **Verification**:
 - [ ] `.mcp.json` file exists
 - [ ] Contains n8n API key
-- [ ] Restart Claude Code session
-- [ ] Ask Claude: "What SSH nodes are available in n8n?"
+- [ ] Restart MCP client session
+- [ ] Ask MCP: "What SSH nodes are available in n8n?"
 
 **Expected Response**:
-Claude should describe the SSH node capabilities using n8n-MCP data.
+MCP should describe the SSH node capabilities using n8n-MCP data.
 
 ---
 
@@ -100,10 +100,10 @@ Claude should describe the SSH node capabilities using n8n-MCP data.
 
 ---
 
-#### Task 1.5: Create Workflow with Claude
+#### Task 1.5: Create Workflow with MCP
 **Estimated Time**: 45 minutes
 
-**Ask Claude**:
+**Ask MCP**:
 ```
 Create an n8n workflow that:
 1. Triggers every hour
@@ -115,7 +115,7 @@ SSH details are in environment variables.
 ```
 
 **Verification**:
-- [ ] Claude generates workflow JSON
+- [ ] MCP generates workflow JSON
 - [ ] Import into n8n
 - [ ] Test manually
 - [ ] Verify logic is correct
@@ -130,7 +130,7 @@ SSH details are in environment variables.
 - ✅ At least 3 workflows created:
   1. Manual test workflow
   2. Server health check
-  3. Claude-generated custom workflow
+  3. MCP-generated custom workflow
 - ✅ SSH connectivity to AMD workstation
 - ✅ Understanding of n8n concepts
 
@@ -183,7 +183,7 @@ Create workflow:
 # Modify for your VPC/subnet/security group
 ```
 
-**Option B: Using Claude**
+**Option B: Using MCP**
 ```
 Create a workflow to provision an AWS EC2 t2.micro instance:
 - AMI: Ubuntu 22.04 LTS (ami-0c7217cdde317cfec)
@@ -307,7 +307,7 @@ Components:
    - Slack for warnings
    - Email for critical issues
 
-**Ask Claude**:
+**Ask MCP**:
 ```
 Create a comprehensive monitoring workflow that checks CPU, memory, disk,
 and Docker health on all my servers every 5 minutes. Store metrics in
@@ -384,7 +384,7 @@ ssh server "journalctl --since '15 minutes ago' | grep -i error"
 5. **Notify**:
    - Send success/failure report
 
-**Ask Claude**:
+**Ask MCP**:
 ```
 Create a backup workflow that runs daily at 2 AM:
 1. Export all n8n workflows to JSON
@@ -450,7 +450,7 @@ Create a backup workflow that runs daily at 2 AM:
 # - docker scan images
 ```
 
-**Ask Claude**:
+**Ask MCP**:
 ```
 Create a weekly security audit workflow that:
 1. Checks for available updates on all servers
@@ -630,7 +630,7 @@ Create a weekly security audit workflow that:
 
 ### MCP & AI
 - [Model Context Protocol](https://modelcontextprotocol.io)
-- [Claude Code Documentation](https://code.claude.com/docs)
+- [MCP client Documentation](https://code.mcp-cli.com/docs)
 
 ---
 

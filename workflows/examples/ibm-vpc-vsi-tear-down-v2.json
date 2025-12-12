@@ -1,0 +1,186 @@
+{
+  "name": "IBM VPC VSI - Tear Down (v2 - Fixed)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "command": "check_output() { local dir=$1; local src=$2; out=$(docker run --rm -v \"$dir:/workspace\" -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); vsi=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.vsi_id?.value||'')\"); echo \"{\\\"status\\\":\\\"VSI_FOUND\\\",\\\"source\\\":\\\"$src\\\",\\\"directory\\\":\\\"$dir\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"vsi_id\\\":\\\"$vsi\\\"}\"; exit 0; fi; return 1; }; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand ibm-vpc-ondemand && exit 0; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image ibm-vpc-from-image && exit 0; echo '{\"status\":\"NO_VSI\",\"message\":\"No active VSI found to tear down\"}'; exit 1"
+      },
+      "name": "Find Active VSI",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "find-vsi"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "directory",
+              "value": "={{ JSON.parse($json.stdout).directory }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ JSON.parse($json.stdout).source }}"
+            },
+            {
+              "name": "vsi_id",
+              "value": "={{ JSON.parse($json.stdout).vsi_id }}"
+            },
+            {
+              "name": "public_ip",
+              "value": "={{ JSON.parse($json.stdout).public_ip }}"
+            }
+          ]
+        }
+      },
+      "name": "Extract VSI Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "extract-vsi"
+    },
+    {
+      "parameters": {
+        "command": "=docker run --rm -v {{ $json.directory }}:/workspace -w /workspace hashicorp/terraform:latest destroy -auto-approve"
+      },
+      "name": "Terraform Destroy",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "terraform-destroy"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "VSI Destroyed Successfully"
+            },
+            {
+              "name": "vsi_id",
+              "value": "={{ $node[\"Extract VSI Info\"].json.vsi_id }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ $node[\"Extract VSI Info\"].json.source }}"
+            },
+            {
+              "name": "public_ip",
+              "value": "={{ $node[\"Extract VSI Info\"].json.public_ip }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "message",
+              "value": "=VSI destroyed. All IBM VPC resources have been removed. Hourly billing has stopped."
+            },
+            {
+              "name": "note",
+              "value": "=Terraform state cleaned. Directory: {{ $node[\"Extract VSI Info\"].json.directory }}"
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"IBM VPC VSI - Tear Down (v2)\" \"SUCCESS\" \"Destroyed VSI: {{ $node[\"Format Results\"].json.vsi_id }}, Source: {{ $node[\"Format Results\"].json.source }}, IP: {{ $node[\"Format Results\"].json.public_ip }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1370, 300],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## IBM VPC VSI - Tear Down (v2)\n\n**Smart Detection:**\n- Checks both terraform directories\n- Tears down ondemand VSI\n- Tears down from-image VSI\n- Works with stopped or running VSI\n\n**What it does:**\n1. Finds active VSI in terraform state\n2. Runs terraform destroy -auto-approve\n3. Removes all resources\n4. Stops hourly billing\n\n**Resources Destroyed:**\n- VSI Instance\n- Floating IP  \n- Public Gateway\n- Security Group\n- Subnet\n- VPC\n\n**Time:** ~2-3 minutes\n**⚠️ Warning:** This is irreversible!",
+        "height": 420,
+        "width": 380
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 520],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Find Active VSI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Active VSI": {
+      "main": [
+        [
+          {
+            "node": "Extract VSI Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract VSI Info": {
+      "main": [
+        [
+          {
+            "node": "Terraform Destroy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terraform Destroy": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["ibm-cloud", "vpc", "teardown", "fixed"]
+}

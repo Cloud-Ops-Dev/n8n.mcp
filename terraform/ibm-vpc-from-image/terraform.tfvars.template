@@ -1,0 +1,12 @@
+# IBM VPC from Custom Image Configuration Template
+# Copy to terraform.tfvars and update custom_image_id
+
+ibm_api_key      = "hdUjtKbl4XTd-2vIjaiH6A2FPfW5yAGdBY7eZGQKyu42"
+ibm_region       = "us-south"
+ssh_key_name     = "lab-key"
+ssh_key_path     = "/home/clay/.ssh/id_ed25519"
+instance_name    = "n8n-lab-vsi-from-image"
+instance_profile = "cx2-2x4"
+
+# IMPORTANT: Update this with your custom image ID from the capture workflow
+custom_image_id  = "YOUR_IMAGE_ID_HERE"

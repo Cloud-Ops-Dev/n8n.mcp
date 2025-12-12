@@ -1,0 +1,456 @@
+{
+  "name": "Multi-Server Connectivity Test - All Servers (v2)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 400],
+      "id": "manual-trigger-multi"
+    },
+    {
+      "parameters": {
+        "command": "hostname && uptime && docker --version && echo '---' && df -h / | tail -1 && echo '---' && free -h | grep Mem"
+      },
+      "name": "AMD Workstation Check",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 200],
+      "id": "amd-check",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AMD Workstation (claymore)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "hostname && uptime && docker --version && echo '---' && df -h / | tail -1 && echo '---' && free -h | grep Mem"
+      },
+      "name": "AWS EC2 Check",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [450, 400],
+      "id": "aws-check",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "AWS EC2 Ubuntu (R_Smurf_001)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "check_output() { local dir=$1; local src=$2; out=$(docker run --rm -v \"$dir:/workspace\" -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); vsi=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.vsi_id?.value||'')\"); echo \"{\\\"status\\\":\\\"VSI_FOUND\\\",\\\"source\\\":\\\"$src\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"vsi_id\\\":\\\"$vsi\\\"}\"; exit 0; fi; return 1; }; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand ibm-vpc-ondemand && exit 0; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image ibm-vpc-from-image && exit 0; echo '{\"status\":\"NO_VSI\",\"message\":\"No active VSI found\"}'; exit 0"
+      },
+      "name": "Find IBM VPC VSI",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 600],
+      "id": "find-ibm-vsi"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ JSON.parse($json.stdout).status }}",
+              "value2": "VSI_FOUND"
+            }
+          ]
+        }
+      },
+      "name": "VSI Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 600],
+      "id": "vsi-found-check"
+    },
+    {
+      "parameters": {
+        "command": "hostname && uptime && docker --version && echo '---' && df -h / | tail -1 && echo '---' && free -h | grep Mem",
+        "host": "={{ JSON.parse($input.first().json.stdout).public_ip }}"
+      },
+      "name": "IBM VPC VSI Check",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [950, 500],
+      "id": "ibm-vsi-check",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "{{ CREDENTIAL_ID }}",
+          "name": "IBM VPC SSH Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "server",
+              "value": "IBM VPC VSI"
+            },
+            {
+              "name": "status",
+              "value": "OFFLINE"
+            },
+            {
+              "name": "message",
+              "value": "No active VSI - use spin-up workflow"
+            },
+            {
+              "name": "stdout",
+              "value": "VSI not running"
+            }
+          ]
+        }
+      },
+      "name": "No VSI Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [950, 700],
+      "id": "no-vsi-result"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "server",
+              "value": "AMD Workstation"
+            },
+            {
+              "name": "hostname",
+              "value": "claymore"
+            },
+            {
+              "name": "ip",
+              "value": "192.168.1.43"
+            },
+            {
+              "name": "location",
+              "value": "Local Network"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.stdout ? 'ONLINE' : 'ERROR' }}"
+            },
+            {
+              "name": "output",
+              "value": "={{ $json.stdout || $json.stderr || 'No response' }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "name": "Format AMD Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 200],
+      "id": "format-amd"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "server",
+              "value": "AWS EC2"
+            },
+            {
+              "name": "hostname",
+              "value": "ec2-3-16-216-114.us-east-2.compute.amazonaws.com"
+            },
+            {
+              "name": "ip",
+              "value": "3.16.216.114"
+            },
+            {
+              "name": "location",
+              "value": "AWS us-east-2"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.stdout ? 'ONLINE' : 'ERROR' }}"
+            },
+            {
+              "name": "output",
+              "value": "={{ $json.stdout || $json.stderr || 'No response' }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "name": "Format AWS Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 400],
+      "id": "format-aws"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "server",
+              "value": "IBM VPC VSI"
+            },
+            {
+              "name": "hostname",
+              "value": "ibm-vpc-vsi"
+            },
+            {
+              "name": "ip",
+              "value": "={{ JSON.parse($node[\"Find IBM VPC VSI\"].json.stdout).public_ip }}"
+            },
+            {
+              "name": "location",
+              "value": "IBM VPC us-south"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.stdout ? 'ONLINE' : 'ERROR' }}"
+            },
+            {
+              "name": "output",
+              "value": "={{ $json.stdout || $json.stderr || 'No response' }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "name": "Format IBM Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1200, 500],
+      "id": "format-ibm"
+    },
+    {
+      "parameters": {},
+      "name": "Merge AMD + AWS",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [950, 300],
+      "id": "merge-amd-aws"
+    },
+    {
+      "parameters": {},
+      "name": "Merge All Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [1450, 500],
+      "id": "merge-results"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Get all items from merge\nconst allItems = $input.all();\n\n// Find each server's status\nconst amdStatus = allItems.find(i => i.json?.server === 'AMD Workstation')?.json?.status || 'UNKNOWN';\nconst awsStatus = allItems.find(i => i.json?.server === 'AWS EC2')?.json?.status || 'UNKNOWN';\nconst ibmStatus = allItems.find(i => i.json?.server === 'IBM VPC VSI')?.json?.status || 'UNKNOWN';\n\n// Return a single item with all statuses\nreturn [\n  {\n    json: {\n      amd_status: amdStatus,\n      aws_status: awsStatus,\n      ibm_status: ibmStatus\n    }\n  }\n];"
+      },
+      "name": "Create Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 500],
+      "id": "create-summary"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"Multi-Server Connectivity Test (v2)\" \"SUCCESS\" \"AMD: {{ $json.amd_status }}, AWS: {{ $json.aws_status }}, IBM: {{ $json.ibm_status }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1950, 500],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## Multi-Server Connectivity Test (v2)\n\nFixed version using bash script and Set nodes.\n\n**Servers Tested:**\n1. AMD Workstation (Local)\n2. AWS EC2 (us-east-2)\n3. IBM VPC VSI (us-south)\n\n**IBM VPC VSI - Smart Detection:**\n- Uses bash script to find active VSI\n- Works with fresh OR image-based VSI\n- Shows as OFFLINE if no VSI running\n\n**What it checks:**\n- Hostname & uptime\n- Docker version\n- Disk space\n- Memory usage\n\n**Output:**\n- Individual server results\n- Merged results for all servers",
+        "height": 500,
+        "width": 400
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 800],
+      "id": "sticky-note-info"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "AMD Workstation Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AWS EC2 Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Find IBM VPC VSI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AMD Workstation Check": {
+      "main": [
+        [
+          {
+            "node": "Format AMD Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AWS EC2 Check": {
+      "main": [
+        [
+          {
+            "node": "Format AWS Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find IBM VPC VSI": {
+      "main": [
+        [
+          {
+            "node": "VSI Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VSI Found?": {
+      "main": [
+        [
+          {
+            "node": "IBM VPC VSI Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No VSI Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IBM VPC VSI Check": {
+      "main": [
+        [
+          {
+            "node": "Format IBM Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No VSI Result": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Format AMD Result": {
+      "main": [
+        [
+          {
+            "node": "Merge AMD + AWS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format AWS Result": {
+      "main": [
+        [
+          {
+            "node": "Merge AMD + AWS",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge AMD + AWS": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format IBM Result": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Results": {
+      "main": [
+        [
+          {
+            "node": "Create Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Summary": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["multi-cloud", "connectivity-test", "monitoring", "fixed"]
+}

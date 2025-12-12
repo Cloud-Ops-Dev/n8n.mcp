@@ -21,7 +21,7 @@ This guide will walk you through setting up the entire n8n + MCP multi-cloud ser
 - **OS**: Linux (you have Arch Linux 6.17.7)
 - **Docker**: Version 20.10 or later
 - **Docker Compose**: Version 2.0 or later
-- **Claude Code CLI**: Latest version
+- **MCP client CLI**: Latest version
 - **Git**: For version control
 - **SSH Client**: OpenSSH
 
@@ -29,7 +29,7 @@ This guide will walk you through setting up the entire n8n + MCP multi-cloud ser
 ```bash
 docker --version
 docker-compose --version
-claude --version
+mcp-cli --version
 git --version
 ssh -V
 ```
@@ -85,7 +85,7 @@ n8n + MCP Lab Setup
 Checking prerequisites...
 ✓ Docker installed
 ✓ Docker Compose installed
-✓ Claude Code CLI installed
+✓ MCP client CLI installed
 
 Setting up environment configuration...
 ✓ Created docker/.env from template
@@ -326,11 +326,11 @@ Should look like:
 
 ### Step 5: Test MCP Integration
 
-**Important**: You may need to restart Claude Code for MCP changes to take effect.
+**Important**: You may need to restart MCP client for MCP changes to take effect.
 
 After restart, try:
 ```
-Ask Claude: "What n8n nodes are available for SSH operations?"
+Ask MCP: "What n8n nodes are available for SSH operations?"
 ```
 
 ---
@@ -355,10 +355,10 @@ docker cp workflows/templates/server-health-check.json n8n:/tmp/
 docker exec n8n n8n import:workflow --input=/tmp/server-health-check.json
 ```
 
-### Method 3: Using Claude + MCP
+### Method 3: Using MCP + MCP
 
 ```
-Ask Claude: "Import the server health check workflow and configure it for my three servers"
+Ask MCP: "Import the server health check workflow and configure it for my three servers"
 ```
 
 ---
@@ -409,7 +409,7 @@ curl -H "X-N8N-API-KEY: your_api_key" \
 
 ### Test 6: MCP Integration
 ```bash
-# In Claude Code
+# In MCP client
 "List available n8n workflow templates"
 ```
 
@@ -467,7 +467,7 @@ cat .mcp.json
 # Check n8n API key is correct
 echo $N8N_API_KEY
 
-# Restart Claude Code session
+# Restart MCP client session
 ```
 
 ### SSH connection refused
@@ -516,7 +516,7 @@ docker-compose -f docker/docker-compose.yml up -d
 - **n8n Documentation**: https://docs.n8n.io
 - **n8n Community**: https://community.n8n.io
 - **MCP Documentation**: https://modelcontextprotocol.io
-- **Claude Code Docs**: https://code.claude.com/docs
+- **MCP client Docs**: https://code.mcp-cli.com/docs
 - **Project Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/n8n.mcp/issues)
 
 ---

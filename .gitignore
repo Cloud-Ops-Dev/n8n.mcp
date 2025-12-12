@@ -40,3 +40,16 @@ secrets/
 node_modules/
 package-lock.json
 yarn.lock
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+!*.tfvars.template
+tfplan
+.terraform.lock.hcl
+
+# MCP personal config
+.mcp.json
