@@ -85,7 +85,7 @@ This lab demonstrates automated infrastructure management across:
 - `configure-mcp.sh`: MCP server configuration
 - `deploy.sh`: Deployment utilities
 
-## 🎓 Learning Objectives
+## 🎓 Testing Objectives
 
 1. **n8n Automation**: Build complex workflows for infrastructure management
 2. **MCP Integration**: Programmatic workflow design and modification
@@ -126,7 +126,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 ## 🤝 Contributing
 
-This is a learning lab project. Feel free to fork and experiment!
+This is a completed test lab for a customer project. Feel free to fork and experiment!
 
 ## 📞 Support
 
