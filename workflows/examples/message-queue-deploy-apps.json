@@ -1,0 +1,232 @@
+{
+  "name": "Message Queue - Deploy Apps",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "aws_ec2_ip",
+              "value": "REPLACE_WITH_AWS_EC2_IP"
+            },
+            {
+              "name": "ibm_vsi_ip",
+              "value": "REPLACE_WITH_IBM_VSI_IP"
+            },
+            {
+              "name": "queue_name",
+              "value": "demo-queue"
+            },
+            {
+              "name": "message_interval",
+              "value": "5"
+            }
+          ]
+        }
+      },
+      "name": "Set Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "set-config"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -i /home/clay/.ssh/R_Smurf_001.pem ubuntu@{{ $json.aws_ec2_ip }} '/usr/local/bin/start-redis.sh'"
+      },
+      "name": "Start Redis on AWS",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 200],
+      "id": "start-redis"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -i /home/clay/.ssh/id_ed25519 root@{{ $node[\"Set Configuration\"].json.ibm_vsi_ip }} '/usr/local/bin/start-producer.sh {{ $node[\"Set Configuration\"].json.aws_ec2_ip }}'"
+      },
+      "name": "Start Producer on IBM",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 400],
+      "id": "start-producer"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/message-queue/deploy-consumer-to-arch.sh {{ $node[\"Set Configuration\"].json.aws_ec2_ip }}"
+      },
+      "name": "Start Consumer on Arch",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "start-consumer"
+    },
+    {
+      "parameters": {
+        "command": "sleep 10"
+      },
+      "name": "Wait for Startup",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "wait-startup"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "All Apps Started Successfully"
+            },
+            {
+              "name": "redis_host",
+              "value": "={{ $node[\"Set Configuration\"].json.aws_ec2_ip }}:6379"
+            },
+            {
+              "name": "producer_host",
+              "value": "={{ $node[\"Set Configuration\"].json.ibm_vsi_ip }}"
+            },
+            {
+              "name": "consumer_host",
+              "value": "192.168.1.43 (Arch Workstation)"
+            },
+            {
+              "name": "queue_name",
+              "value": "={{ $node[\"Set Configuration\"].json.queue_name }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "message",
+              "value": "Message queue demo running! Producer (IBM) -> Redis (AWS) -> Consumer (Arch Workstation)"
+            },
+            {
+              "name": "view_logs",
+              "value": "Run: ssh 192.168.1.43 'docker logs -f mq-consumer'"
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"Message Queue - Deploy Apps\" \"SUCCESS\" \"Redis: {{ $node[\"Set Configuration\"].json.aws_ec2_ip }}, Producer: {{ $node[\"Set Configuration\"].json.ibm_vsi_ip }}, Consumer: 192.168.1.43\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## Message Queue - Deploy Apps\n\n**Multi-Cloud + On-Prem Architecture**\n\n**With Option C (Hybrid):**\n- Redis auto-starts on AWS boot\n- Producer auto-starts on IBM boot\n- Only consumer needs manual deploy\n\n**This workflow:**\n1. Verifies Redis on AWS (redundant)\n2. Verifies Producer on IBM (redundant)\n3. Deploys Consumer to Arch Workstation\n\n**Prerequisites:**\n- AWS EC2 running (Redis auto-started)\n- IBM VSI running (Producer auto-started)\n- Update IPs in 'Set Configuration'\n\n**After running:**\nWatch consumer logs:\n`ssh 192.168.1.43 'docker logs -f mq-consumer'`\n\n**Architecture:**\n```\nIBM (Producer) --> AWS (Redis)\n                      ^\n                      |\n            Arch Workstation (Consumer)\n```",
+        "height": 460,
+        "width": 380
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 520],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Configuration": {
+      "main": [
+        [
+          {
+            "node": "Start Redis on AWS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Redis on AWS": {
+      "main": [
+        [
+          {
+            "node": "Start Producer on IBM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Producer on IBM": {
+      "main": [
+        [
+          {
+            "node": "Start Consumer on Arch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Consumer on Arch": {
+      "main": [
+        [
+          {
+            "node": "Wait for Startup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Startup": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["message-queue", "deploy", "multi-cloud"]
+}

@@ -1,0 +1,7 @@
+# AWS Packer Variables
+# Copy this file to variables.pkrvars.hcl and fill in your values
+
+aws_region     = "us-east-2"
+aws_access_key = "YOUR_AWS_ACCESS_KEY"
+aws_secret_key = "YOUR_AWS_SECRET_KEY"
+ami_name       = "n8n-lab-redis-ami"

@@ -1,5 +1,5 @@
 {
-  "name": "IBM VPC VSI - Tear Down (v2 - Fixed)",
+  "name": "AWS EC2 - Tear Down On-Demand",
   "nodes": [
     {
       "parameters": {},
@@ -11,13 +11,13 @@
     },
     {
       "parameters": {
-        "command": "check_output() { local dir=$1; local src=$2; out=$(docker run --rm -v \"$dir:/workspace\" -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); vsi=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.vsi_id?.value||'')\"); echo \"{\\\"status\\\":\\\"VSI_FOUND\\\",\\\"source\\\":\\\"$src\\\",\\\"directory\\\":\\\"$dir\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"vsi_id\\\":\\\"$vsi\\\"}\"; exit 0; fi; return 1; }; check_output /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand ibm-vpc-ondemand && exit 0; check_output /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-from-image ibm-vpc-from-image && exit 0; echo '{\"status\":\"NO_VSI\",\"message\":\"No active VSI found to tear down\"}'; exit 1"
+        "command": "out=$(docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/aws-ec2-ondemand:/workspace -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then inst=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.instance_id?.value||'')\"); priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); echo \"{\\\"status\\\":\\\"EC2_FOUND\\\",\\\"directory\\\":\\\"/home/clay/IDE/tools/n8n.mcp/terraform/aws-ec2-ondemand\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"instance_id\\\":\\\"$inst\\\"}\"; else echo '{\"status\":\"NO_EC2\",\"message\":\"No active EC2 instance found to tear down\"}'; exit 1; fi"
       },
-      "name": "Find Active VSI",
+      "name": "Find Active EC2",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [460, 300],
-      "id": "find-vsi"
+      "id": "find-ec2"
     },
     {
       "parameters": {
@@ -28,12 +28,8 @@
               "value": "={{ JSON.parse($json.stdout).directory }}"
             },
             {
-              "name": "source",
-              "value": "={{ JSON.parse($json.stdout).source }}"
-            },
-            {
-              "name": "vsi_id",
-              "value": "={{ JSON.parse($json.stdout).vsi_id }}"
+              "name": "instance_id",
+              "value": "={{ JSON.parse($json.stdout).instance_id }}"
             },
             {
               "name": "public_ip",
@@ -42,11 +38,11 @@
           ]
         }
       },
-      "name": "Extract VSI Info",
+      "name": "Extract EC2 Info",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [680, 300],
-      "id": "extract-vsi"
+      "id": "extract-ec2"
     },
     {
       "parameters": {
@@ -64,19 +60,15 @@
           "string": [
             {
               "name": "status",
-              "value": "VSI Destroyed Successfully"
+              "value": "EC2 Instance Destroyed Successfully"
             },
             {
-              "name": "vsi_id",
-              "value": "={{ $node[\"Extract VSI Info\"].json.vsi_id }}"
-            },
-            {
-              "name": "source",
-              "value": "={{ $node[\"Extract VSI Info\"].json.source }}"
+              "name": "instance_id",
+              "value": "={{ $node[\"Extract EC2 Info\"].json.instance_id }}"
             },
             {
               "name": "public_ip",
-              "value": "={{ $node[\"Extract VSI Info\"].json.public_ip }}"
+              "value": "={{ $node[\"Extract EC2 Info\"].json.public_ip }}"
             },
             {
               "name": "timestamp",
@@ -84,11 +76,11 @@
             },
             {
               "name": "message",
-              "value": "=VSI destroyed. All IBM VPC resources have been removed. Hourly billing has stopped."
+              "value": "=EC2 instance destroyed. All AWS resources removed (VPC, subnet, security group, instance)."
             },
             {
-              "name": "note",
-              "value": "=Terraform state cleaned. Directory: {{ $node[\"Extract VSI Info\"].json.directory }}"
+              "name": "cost_note",
+              "value": "Free tier hours have stopped. No further charges for this instance."
             }
           ]
         }
@@ -101,7 +93,7 @@
     },
     {
       "parameters": {
-        "command": "=/scripts/workflow-logger.sh \"IBM VPC VSI - Tear Down (v2)\" \"SUCCESS\" \"Destroyed VSI: {{ $node[\"Format Results\"].json.vsi_id }}, Source: {{ $node[\"Format Results\"].json.source }}, IP: {{ $node[\"Format Results\"].json.public_ip }}\""
+        "command": "=/scripts/workflow-logger.sh \"AWS EC2 - Tear Down On-Demand\" \"SUCCESS\" \"Destroyed: {{ $node[\"Format Results\"].json.instance_id }}, IP: {{ $node[\"Format Results\"].json.public_ip }}\""
       },
       "name": "Log Execution",
       "type": "n8n-nodes-base.executeCommand",
@@ -111,8 +103,8 @@
     },
     {
       "parameters": {
-        "content": "## IBM VPC VSI - Tear Down (v2)\n\n**Smart Detection:**\n- Checks both terraform directories\n- Tears down ondemand VSI\n- Tears down from-image VSI\n- Works with stopped or running VSI\n\n**What it does:**\n1. Finds active VSI in terraform state\n2. Runs terraform destroy -auto-approve\n3. Removes all resources\n4. Stops hourly billing\n\n**Resources Destroyed:**\n- VSI Instance\n- Floating IP  \n- Public Gateway\n- Security Group\n- Subnet\n- VPC\n\n**Time:** ~2-3 minutes\n**⚠️ Warning:** This is irreversible!",
-        "height": 420,
+        "content": "## AWS EC2 - Tear Down On-Demand\n\n**What it does:**\n1. Checks terraform state for active EC2\n2. Runs terraform destroy -auto-approve\n3. Removes all AWS resources\n4. Logs execution\n\n**Resources Destroyed:**\n- EC2 Instance\n- VPC\n- Subnet\n- Internet Gateway\n- Route Table\n- Security Group\n\n**Time:** ~2-3 minutes\n\n**Note:** Always tear down when done\nto stay within free tier limits!\n\n**Warning:** This is irreversible!",
+        "height": 380,
         "width": 380
       },
       "name": "Sticky Note",
@@ -127,25 +119,25 @@
       "main": [
         [
           {
-            "node": "Find Active VSI",
+            "node": "Find Active EC2",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Find Active VSI": {
+    "Find Active EC2": {
       "main": [
         [
           {
-            "node": "Extract VSI Info",
+            "node": "Extract EC2 Info",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract VSI Info": {
+    "Extract EC2 Info": {
       "main": [
         [
           {
@@ -182,5 +174,5 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "tags": ["ibm-cloud", "vpc", "teardown", "fixed"]
+  "tags": ["aws", "ec2", "terraform", "teardown", "message-queue"]
 }

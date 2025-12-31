@@ -11,7 +11,7 @@
     },
     {
       "parameters": {
-        "command": "check_output() { local dir=$1; local src=$2; out=$(docker run --rm -v \"$dir:/workspace\" -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); vsi=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.vsi_id?.value||'')\"); echo \"{\\\"status\\\":\\\"VSI_FOUND\\\",\\\"source\\\":\\\"$src\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"vsi_id\\\":\\\"$vsi\\\"}\"; exit 0; fi; return 1; }; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand ibm-vpc-ondemand && exit 0; check_output /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image ibm-vpc-from-image && exit 0; echo '{\"status\":\"NO_VSI\",\"message\":\"No active VSI found\"}'; exit 1"
+        "command": "check_output() { local dir=$1; local src=$2; out=$(docker run --rm -v \"$dir:/workspace\" -w /workspace hashicorp/terraform:latest output -json 2>/dev/null || echo '{}'); ip=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.public_ip?.value||'')\"); if [ -n \"$ip\" ]; then priv=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.private_ip?.value||'')\"); vsi=$(echo \"$out\" | node -e \"const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.vsi_id?.value||'')\"); echo \"{\\\"status\\\":\\\"VSI_FOUND\\\",\\\"source\\\":\\\"$src\\\",\\\"public_ip\\\":\\\"$ip\\\",\\\"private_ip\\\":\\\"$priv\\\",\\\"vsi_id\\\":\\\"$vsi\\\"}\"; exit 0; fi; return 1; }; check_output /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand ibm-vpc-ondemand && exit 0; check_output /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-from-image ibm-vpc-from-image && exit 0; echo '{\"status\":\"NO_VSI\",\"message\":\"No active VSI found\"}'; exit 1"
       },
       "name": "Find Active VSI",
       "type": "n8n-nodes-base.executeCommand",
@@ -33,7 +33,7 @@
             },
             {
               "name": "api_key",
-              "value": "hdUjtKbl4XTd-2vIjaiH6A2FPfW5yAGdBY7eZGQKyu42"
+              "value": "YOUR_IBM_API_KEY"
             }
           ]
         }

@@ -1,0 +1,267 @@
+{
+  "name": "Message Queue - Full Demo Orchestration",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "action",
+              "value": "status"
+            },
+            {
+              "name": "aws_ec2_ip",
+              "value": ""
+            },
+            {
+              "name": "ibm_vsi_ip",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "name": "Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "configuration"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "value2": "deploy"
+            }
+          ]
+        }
+      },
+      "name": "Is Deploy?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 200],
+      "id": "is-deploy"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "value2": "teardown"
+            }
+          ]
+        }
+      },
+      "name": "Is Teardown?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 400],
+      "id": "is-teardown"
+    },
+    {
+      "parameters": {
+        "command": "echo 'DEPLOY: Full deployment would spin up AWS EC2, IBM VSI, and deploy all apps. Set action=deploy-execute to run.'"
+      },
+      "name": "Deploy Info",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 100],
+      "id": "deploy-info"
+    },
+    {
+      "parameters": {
+        "command": "echo 'TEARDOWN: Full teardown would stop apps and destroy all cloud resources. Set action=teardown-execute to run.'"
+      },
+      "name": "Teardown Info",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 400],
+      "id": "teardown-info"
+    },
+    {
+      "parameters": {
+        "command": "echo '=== MESSAGE QUEUE DEMO STATUS ===' && echo '' && echo 'AWS EC2 (Redis):' && (ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /home/clay/.ssh/R_Smurf_001.pem ubuntu@{{ $node.Configuration.json.aws_ec2_ip }} '/usr/local/bin/status-redis.sh' 2>/dev/null || echo 'NOT_CONFIGURED') && echo '' && echo 'IBM VSI (Producer):' && (ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /home/clay/.ssh/id_ed25519 root@{{ $node.Configuration.json.ibm_vsi_ip }} '/usr/local/bin/status-producer.sh' 2>/dev/null || echo 'NOT_CONFIGURED') && echo '' && echo 'Arch Workstation (Consumer):' && (ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /home/clay/.ssh/id_ed25519 clayton@192.168.1.43 'docker ps --filter name=mq-consumer 2>/dev/null | grep -q mq-consumer && echo Up || echo NOT_RUNNING') && echo '' && echo '================================='"
+      },
+      "name": "Check Status",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "check-status"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "workflow",
+              "value": "Message Queue - Full Demo Orchestration"
+            },
+            {
+              "name": "action_requested",
+              "value": "={{ $node.Configuration.json.action }}"
+            },
+            {
+              "name": "result",
+              "value": "={{ $json.stdout }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "available_actions",
+              "value": "status, deploy, teardown, health"
+            },
+            {
+              "name": "usage",
+              "value": "Set 'action' in Configuration node. For deploy/teardown, also set aws_ec2_ip and ibm_vsi_ip."
+            }
+          ]
+        }
+      },
+      "name": "Format Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "format-output"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"Message Queue - Full Demo Orchestration\" \"SUCCESS\" \"Action: {{ $json.action_requested }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## Message Queue - Full Demo Orchestration\n\n**Master workflow for the multi-cloud demonstration.**\n\n### Available Actions\n\nSet the `action` field in Configuration:\n\n| Action | Description |\n|--------|-------------|\n| `status` | Check all component status |\n| `deploy` | Show deployment info |\n| `teardown` | Show teardown info |\n| `health` | Run health checks |\n\n### For Full Deployment\n\n1. Run `AWS EC2 - Spin Up On-Demand`\n2. Run `IBM VPC VSI - Spin Up from Image`\n3. Update IPs in Configuration\n4. Run `Message Queue - Deploy Apps`\n\n### For Full Teardown\n\n1. Run `Message Queue - Stop Apps`\n2. Run `AWS EC2 - Tear Down On-Demand`\n3. Run `IBM VPC VSI - Tear Down (v2)`\n\n### Architecture\n```\nIBM Cloud (Producer)\n       │\n       ▼\nAWS EC2 (Redis) ◀─ Arch Workstation (Consumer)\n```\n\n**Presented by Novique.AI**",
+        "height": 560,
+        "width": 420
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 480],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "Is Deploy?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Teardown?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Deploy?": {
+      "main": [
+        [
+          {
+            "node": "Deploy Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Is Teardown?": {
+      "main": [
+        [
+          {
+            "node": "Teardown Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Deploy Info": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Teardown Info": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Output": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["message-queue", "orchestration", "multi-cloud", "novique"]
+}

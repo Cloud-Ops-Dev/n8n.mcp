@@ -2,8 +2,8 @@
 # Find active IBM VPC VSI from either terraform directory
 # Returns JSON with VSI info or error
 
-ONDEMAND_DIR="/home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand"
-FROMIMAGE_DIR="/home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-from-image"
+ONDEMAND_DIR="/home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand"
+FROMIMAGE_DIR="/home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-from-image"
 
 # Function to check terraform output
 check_terraform_output() {

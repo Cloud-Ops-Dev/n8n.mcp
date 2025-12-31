@@ -23,7 +23,7 @@ Establish local development environment with n8n and MCP fully operational.
 
 ```bash
 # Execute setup
-cd /home/clay/Documents/GitHub/n8n.mcp
+cd /home/clay/IDE/tools/n8n.mcp
 ./scripts/setup.sh
 ```
 

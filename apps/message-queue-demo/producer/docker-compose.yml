@@ -1,0 +1,10 @@
+services:
+  producer:
+    build: .
+    container_name: mq-producer
+    restart: unless-stopped
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-localhost}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - QUEUE_NAME=${QUEUE_NAME:-demo-queue}
+      - MESSAGE_INTERVAL=${MESSAGE_INTERVAL:-5}

@@ -1,0 +1,240 @@
+{
+  "name": "Message Queue - Health Check",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "aws_ec2_ip",
+              "value": "REPLACE_WITH_AWS_EC2_IP"
+            },
+            {
+              "name": "ibm_vsi_ip",
+              "value": "REPLACE_WITH_IBM_VSI_IP"
+            },
+            {
+              "name": "queue_name",
+              "value": "demo-queue"
+            }
+          ]
+        }
+      },
+      "name": "Set Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "set-config"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/clay/.ssh/R_Smurf_001.pem ubuntu@{{ $json.aws_ec2_ip }} 'docker exec mq-redis redis-cli ping 2>/dev/null || echo FAILED' | head -1"
+      },
+      "name": "Check Redis",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "check-redis"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/clay/.ssh/id_ed25519 root@{{ $node[\"Set Configuration\"].json.ibm_vsi_ip }} 'docker ps --filter name=mq-producer 2>/dev/null | grep -q mq-producer && docker ps --filter name=mq-producer --format table 2>/dev/null | tail -1 || echo FAILED'"
+      },
+      "name": "Check Producer",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "check-producer"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/clay/.ssh/id_ed25519 clayton@192.168.1.43 'docker ps --filter name=mq-consumer 2>/dev/null | grep -q mq-consumer && docker ps --filter name=mq-consumer --format table 2>/dev/null | tail -1 || echo FAILED'"
+      },
+      "name": "Check Consumer",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "check-consumer"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/clay/.ssh/R_Smurf_001.pem ubuntu@{{ $node[\"Set Configuration\"].json.aws_ec2_ip }} 'docker exec mq-redis redis-cli llen {{ $node[\"Set Configuration\"].json.queue_name }} 2>/dev/null || echo 0'"
+      },
+      "name": "Get Queue Length",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "id": "queue-length"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "Health Check Complete"
+            },
+            {
+              "name": "redis_status",
+              "value": "={{ $node[\"Check Redis\"].json.stdout.trim() === 'PONG' ? 'HEALTHY' : 'UNHEALTHY' }}"
+            },
+            {
+              "name": "redis_response",
+              "value": "={{ $node[\"Check Redis\"].json.stdout.trim() }}"
+            },
+            {
+              "name": "producer_status",
+              "value": "={{ $node[\"Check Producer\"].json.stdout.includes('Up') ? 'HEALTHY' : 'UNHEALTHY' }}"
+            },
+            {
+              "name": "producer_uptime",
+              "value": "={{ $node[\"Check Producer\"].json.stdout.trim() }}"
+            },
+            {
+              "name": "consumer_status",
+              "value": "={{ $node[\"Check Consumer\"].json.stdout.includes('Up') ? 'HEALTHY' : 'UNHEALTHY' }}"
+            },
+            {
+              "name": "consumer_uptime",
+              "value": "={{ $node[\"Check Consumer\"].json.stdout.trim() }}"
+            },
+            {
+              "name": "queue_length",
+              "value": "={{ $json.stdout.trim() }}"
+            },
+            {
+              "name": "queue_name",
+              "value": "={{ $node[\"Set Configuration\"].json.queue_name }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "overall_health",
+              "value": "={{ ($node[\"Check Redis\"].json.stdout.trim() === 'PONG' && $node[\"Check Producer\"].json.stdout.includes('Up') && $node[\"Check Consumer\"].json.stdout.includes('Up')) ? 'ALL_HEALTHY' : 'DEGRADED' }}"
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"Message Queue - Health Check\" \"{{ $json.overall_health }}\" \"Redis: {{ $json.redis_status }}, Producer: {{ $json.producer_status }}, Consumer: {{ $json.consumer_status }}, Queue: {{ $json.queue_length }}\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## Message Queue - Health Check\n\n**Checks 3 components:**\n1. Redis (AWS) - ping response\n2. Producer (IBM) - container status\n3. Consumer (Arch Workstation) - container status\n\n**Also reports:**\n- Queue length (pending msgs)\n- Container uptimes\n- Overall health status\n\n**Health Statuses:**\n- HEALTHY: Component running\n- UNHEALTHY: Component down\n- ALL_HEALTHY: Everything OK\n- DEGRADED: Something wrong\n\n**Update IPs in 'Set Configuration'\nbefore running!**",
+        "height": 360,
+        "width": 340
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 520],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Configuration": {
+      "main": [
+        [
+          {
+            "node": "Check Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Redis": {
+      "main": [
+        [
+          {
+            "node": "Check Producer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Producer": {
+      "main": [
+        [
+          {
+            "node": "Check Consumer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Consumer": {
+      "main": [
+        [
+          {
+            "node": "Get Queue Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Queue Length": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["message-queue", "health-check", "monitoring"]
+}

@@ -11,7 +11,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest init"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest init"
       },
       "name": "Terraform Init",
       "type": "n8n-nodes-base.executeCommand",
@@ -21,7 +21,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest plan -out=tfplan"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest plan -out=tfplan"
       },
       "name": "Terraform Plan",
       "type": "n8n-nodes-base.executeCommand",
@@ -31,7 +31,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest apply -auto-approve tfplan"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest apply -auto-approve tfplan"
       },
       "name": "Terraform Apply",
       "type": "n8n-nodes-base.executeCommand",
@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest output -json"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand:/workspace -w /workspace hashicorp/terraform:latest output -json"
       },
       "name": "Get Outputs",
       "type": "n8n-nodes-base.executeCommand",

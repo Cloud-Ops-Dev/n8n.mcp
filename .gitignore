@@ -51,5 +51,17 @@ yarn.lock
 tfplan
 .terraform.lock.hcl
 
+# Packer
+*.pkrvars.hcl
+!*.pkrvars.hcl.example
+.packer/
+packer/.packer.d/
+
+# Status files (session notes)
+STATUS*.md
+PROJECT_STRUCTURE
+
 # MCP personal config
 .mcp.json
+
+.planning/

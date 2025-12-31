@@ -78,6 +78,34 @@ resource "ibm_is_instance" "ondemand_vsi" {
   vpc  = ibm_is_vpc.ondemand_vpc.id
   zone = "${var.ibm_region}-1"
   keys = [data.ibm_is_ssh_key.lab_key.id]
+
+  # Option C: Hybrid - Dynamic config via user_data, app baked into image
+  user_data = <<-EOF
+              #!/bin/bash
+              set -e
+
+              # Log to file for debugging
+              exec > /var/log/cloud-init-producer.log 2>&1
+
+              echo "=== Starting cloud-init for Producer (Option C: Hybrid) ==="
+              echo "Redis Host: ${var.redis_host}"
+              echo "Redis Port: ${var.redis_port}"
+              echo "Queue Name: ${var.queue_name}"
+
+              # Write environment file for producer
+              cat > /opt/mq-producer/.env << 'ENVFILE'
+              REDIS_HOST=${var.redis_host}
+              REDIS_PORT=${var.redis_port}
+              QUEUE_NAME=${var.queue_name}
+              MESSAGE_INTERVAL=${var.message_interval}
+              ENVFILE
+
+              # Start the producer container (image pre-built in custom image)
+              cd /opt/mq-producer
+              docker-compose up -d
+
+              echo "=== Cloud-init complete - Producer is running ==="
+              EOF
 }
 
 # Floating IP for public access

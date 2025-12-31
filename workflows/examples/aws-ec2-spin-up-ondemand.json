@@ -1,5 +1,5 @@
 {
-  "name": "IBM VPC VSI - Spin Up from Image (v3)",
+  "name": "AWS EC2 - Spin Up On-Demand",
   "nodes": [
     {
       "parameters": {},
@@ -14,32 +14,32 @@
         "values": {
           "string": [
             {
-              "name": "image_id",
-              "value": "r006-0503dbed-5686-454e-8c1d-68dd70b8f631"
+              "name": "aws_access_key",
+              "value": "YOUR_AWS_ACCESS_KEY"
             },
             {
-              "name": "api_key",
-              "value": "YOUR_IBM_API_KEY"
+              "name": "aws_secret_key",
+              "value": "YOUR_AWS_SECRET_KEY"
             },
             {
-              "name": "region",
-              "value": "us-south"
+              "name": "aws_region",
+              "value": "us-east-2"
             },
             {
               "name": "ssh_key_name",
-              "value": "lab-key"
+              "value": "R_Smurf_001"
             },
             {
               "name": "instance_name",
-              "value": "n8n-lab-vsi-from-image"
+              "value": "n8n-lab-ec2-redis"
             },
             {
-              "name": "instance_profile",
-              "value": "cx2-2x4"
+              "name": "instance_type",
+              "value": "t2.micro"
             },
             {
-              "name": "redis_host",
-              "value": "REPLACE_WITH_AWS_EC2_IP"
+              "name": "ami_id",
+              "value": "ami-03f1669e8a4fc6134"
             }
           ]
         }
@@ -52,7 +52,7 @@
     },
     {
       "parameters": {
-        "command": "=cat > /terraform/ibm-vpc-from-image/terraform.tfvars <<'EOF'\n# IBM VPC from Custom Image Configuration\nibm_api_key      = \"{{ $json.api_key }}\"\nibm_region       = \"{{ $json.region }}\"\nssh_key_name     = \"{{ $json.ssh_key_name }}\"\nssh_key_path     = \"/home/clay/.ssh/id_ed25519\"\ninstance_name    = \"{{ $json.instance_name }}\"\ninstance_profile = \"{{ $json.instance_profile }}\"\ncustom_image_id  = \"{{ $json.image_id }}\"\nredis_host       = \"{{ $json.redis_host }}\"\nEOF"
+        "command": "=cat > /terraform/aws-ec2-ondemand/terraform.tfvars <<'EOF'\n# AWS EC2 On-Demand Configuration\naws_access_key = \"{{ $json.aws_access_key }}\"\naws_secret_key = \"{{ $json.aws_secret_key }}\"\naws_region     = \"{{ $json.aws_region }}\"\nssh_key_name   = \"{{ $json.ssh_key_name }}\"\nssh_key_path   = \"/home/clay/.ssh/R_Smurf_001.pem\"\ninstance_name  = \"{{ $json.instance_name }}\"\ninstance_type  = \"{{ $json.instance_type }}\"\nami_id         = \"{{ $json.ami_id }}\"\nEOF"
       },
       "name": "Write Terraform Config",
       "type": "n8n-nodes-base.executeCommand",
@@ -62,7 +62,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest init"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/aws-ec2-ondemand:/workspace -w /workspace hashicorp/terraform:latest init"
       },
       "name": "Terraform Init",
       "type": "n8n-nodes-base.executeCommand",
@@ -72,7 +72,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest plan -out=tfplan"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/aws-ec2-ondemand:/workspace -w /workspace hashicorp/terraform:latest plan -out=tfplan"
       },
       "name": "Terraform Plan",
       "type": "n8n-nodes-base.executeCommand",
@@ -82,7 +82,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest apply -auto-approve tfplan"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/aws-ec2-ondemand:/workspace -w /workspace hashicorp/terraform:latest apply -auto-approve tfplan"
       },
       "name": "Terraform Apply",
       "type": "n8n-nodes-base.executeCommand",
@@ -92,7 +92,7 @@
     },
     {
       "parameters": {
-        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-from-image:/workspace -w /workspace hashicorp/terraform:latest output -json"
+        "command": "docker run --rm -v /home/clay/IDE/tools/n8n.mcp/terraform/aws-ec2-ondemand:/workspace -w /workspace hashicorp/terraform:latest output -json"
       },
       "name": "Get Outputs",
       "type": "n8n-nodes-base.executeCommand",
@@ -106,11 +106,11 @@
           "string": [
             {
               "name": "status",
-              "value": "VSI Provisioned Successfully from Custom Image"
+              "value": "EC2 Instance Provisioned Successfully"
             },
             {
-              "name": "vsi_id",
-              "value": "={{ JSON.parse($json.stdout).vsi_id.value }}"
+              "name": "instance_id",
+              "value": "={{ JSON.parse($json.stdout).instance_id.value }}"
             },
             {
               "name": "public_ip",
@@ -121,12 +121,16 @@
               "value": "={{ JSON.parse($json.stdout).private_ip.value }}"
             },
             {
+              "name": "public_dns",
+              "value": "={{ JSON.parse($json.stdout).public_dns.value }}"
+            },
+            {
               "name": "ssh_command",
               "value": "={{ JSON.parse($json.stdout).ssh_command.value }}"
             },
             {
-              "name": "image_id_used",
-              "value": "={{ JSON.parse($json.stdout).image_id_used.value }}"
+              "name": "redis_endpoint",
+              "value": "={{ JSON.parse($json.stdout).redis_endpoint.value }}"
             },
             {
               "name": "timestamp",
@@ -134,11 +138,11 @@
             },
             {
               "name": "message",
-              "value": "IBM VPC VSI is ready! Producer auto-starting with Redis IP from cloud-init."
+              "value": "AWS EC2 instance is ready! Redis auto-started on boot (pre-built AMI)."
             },
             {
-              "name": "note",
-              "value": "Producer will auto-start once cloud-init completes. Check logs: ssh root@<IP> 'docker logs mq-producer'"
+              "name": "next_step",
+              "value": "Redis is running. Spin up IBM VSI next, then deploy consumer to Arch Workstation."
             }
           ]
         }
@@ -151,7 +155,7 @@
     },
     {
       "parameters": {
-        "command": "=/scripts/workflow-logger.sh \"IBM VPC VSI - Spin Up from Image (v2)\" \"SUCCESS\" \"VSI ID: {{ $json.vsi_id }}, IP: {{ $json.public_ip }}\""
+        "command": "=/scripts/workflow-logger.sh \"AWS EC2 - Spin Up On-Demand\" \"SUCCESS\" \"Instance: {{ $json.instance_id }}, IP: {{ $json.public_ip }}\""
       },
       "name": "Log Execution",
       "type": "n8n-nodes-base.executeCommand",
@@ -161,8 +165,8 @@
     },
     {
       "parameters": {
-        "content": "## IBM VPC VSI - Spin Up from Image (v3)\n\n**Pre-built image with Producer app.**\n\n**IMPORTANT:** Update redis_host with\nAWS EC2 IP before running!\n\n**What it does:**\n1. Creates terraform.tfvars with image ID\n2. Passes redis_host via user-data\n3. Provisions VPC infrastructure\n4. Spins up VSI from custom image\n5. Producer auto-starts on boot!\n\n**Option C: Hybrid Approach**\n- Docker + Producer baked into image\n- Redis IP passed via cloud-init\n- Apps start automatically\n\n**After running:**\nProducer starts automatically!\nCheck logs:\nssh root@<IP> 'docker logs mq-producer'\n\n**Workflow:**\n1. Run AWS EC2 Spin Up first\n2. Copy Redis IP to redis_host\n3. Run this workflow",
-        "height": 500,
+        "content": "## AWS EC2 - Spin Up On-Demand\n\n**Configuration:**\n- Instance Type: t2.micro (FREE TIER)\n- Region: us-east-2\n- AMI: Pre-built with Docker + Redis\n\n**What it does:**\n1. Creates terraform.tfvars with AWS creds\n2. Provisions VPC, subnet, security group\n3. Spins up EC2 from pre-built AMI\n4. Redis auto-starts on boot!\n5. Returns connection details\n\n**Security Group Ports:**\n- 22 (SSH)\n- 6379 (Redis)\n\n**After running:**\nRedis is already running!\nNext: Spin up IBM VSI with this IP.\n\n**Cost:** FREE (t2.micro eligible)\n\n**Option C: Hybrid Approach**\nDocker + Redis baked into AMI.",
+        "height": 480,
         "width": 400
       },
       "name": "Sticky Note",
@@ -265,5 +269,5 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "tags": ["ibm-cloud", "vpc", "from-image", "fixed"]
+  "tags": ["aws", "ec2", "terraform", "message-queue"]
 }

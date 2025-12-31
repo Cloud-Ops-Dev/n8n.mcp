@@ -52,7 +52,7 @@ ssh -V
 
 ```bash
 # Navigate to your projects directory
-cd /home/clay/Documents/GitHub
+cd /home/clay/IDE/tools
 
 # Clone the repository (replace with your GitHub URL after creating it)
 git clone https://github.com/YOUR_USERNAME/n8n.mcp.git

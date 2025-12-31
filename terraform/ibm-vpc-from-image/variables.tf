@@ -40,3 +40,26 @@ variable "instance_profile" {
   type        = string
   default     = "cx2-2x4"  # 2 vCPU, 4 GB RAM
 }
+
+variable "redis_host" {
+  description = "Redis server IP address (AWS EC2)"
+  type        = string
+}
+
+variable "redis_port" {
+  description = "Redis server port"
+  type        = string
+  default     = "6379"
+}
+
+variable "queue_name" {
+  description = "Redis queue name"
+  type        = string
+  default     = "demo-queue"
+}
+
+variable "message_interval" {
+  description = "Seconds between messages"
+  type        = string
+  default     = "5"
+}

@@ -66,6 +66,7 @@ services:
       - ../scripts:/scripts:ro
       - ../logs:/logs
       - /var/run/docker.sock:/var/run/docker.sock
+      - /home/clay/.ssh:/home/clay/.ssh:ro
     depends_on:
       postgres:
         condition: service_healthy

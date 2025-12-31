@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600">
+  <defs>
+    <linearGradient id="awsGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF9900;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6600;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="ibmGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0062FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0043CE;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="onpremGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="n8nGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#EA4B71;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D63A5C;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.2"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0EA5E9"/>
+    </marker>
+    <marker id="arrowheadPink" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#EA4B71"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="600" fill="#F8FAFC"/>
+
+  <!-- Title -->
+  <text x="500" y="35" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#1E293B" text-anchor="middle">Multi-Cloud + On-Prem Message Queue Architecture</text>
+  <text x="500" y="55" font-family="Arial, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">Hybrid Cloud Demonstration: IBM Cloud + AWS + On-Premises Infrastructure</text>
+
+  <!-- ==================== ON-PREMISES ENVIRONMENT BOX ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="520" y="75" width="460" height="280" rx="16" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+    <rect x="520" y="75" width="460" height="35" rx="16" fill="url(#onpremGrad)"/>
+    <rect x="520" y="98" width="460" height="12" fill="url(#onpremGrad)"/>
+  </g>
+  <text x="750" y="100" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">ON-PREMISES ENVIRONMENT</text>
+
+  <!-- Laptop (Control Plane) -->
+  <g filter="url(#shadow)">
+    <rect x="545" y="130" width="180" height="200" rx="10" fill="white" stroke="#EA4B71" stroke-width="2"/>
+  </g>
+  <text x="635" y="155" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#BE185D" text-anchor="middle">CONTROL PLANE</text>
+
+  <!-- Laptop icon -->
+  <rect x="585" y="170" width="100" height="65" rx="6" fill="#FDF2F8" stroke="#EA4B71" stroke-width="1.5"/>
+  <rect x="595" y="180" width="80" height="45" rx="3" fill="#EA4B71"/>
+  <text x="635" y="210" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle">n8n</text>
+  <rect x="575" y="235" width="120" height="8" rx="3" fill="#FBCFE8"/>
+
+  <text x="635" y="265" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1E293B" text-anchor="middle">Laptop</text>
+  <text x="635" y="280" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">n8n Orchestrator</text>
+  <text x="635" y="295" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">localhost:5678</text>
+
+  <rect x="570" y="305" width="130" height="18" rx="4" fill="#FCE7F3"/>
+  <text x="635" y="318" font-family="Arial, sans-serif" font-size="9" fill="#BE185D" text-anchor="middle">Terraform + SSH + API</text>
+
+  <!-- Arrow from Laptop to Arch -->
+  <line x1="725" y1="230" x2="770" y2="230" stroke="#EA4B71" stroke-width="2" marker-end="url(#arrowheadPink)"/>
+  <text x="747" y="222" font-family="Arial, sans-serif" font-size="8" fill="#EA4B71" text-anchor="middle">SSH</text>
+
+  <!-- Arch Workstation (Data Plane - Consumer) -->
+  <g filter="url(#shadow)">
+    <rect x="775" y="130" width="180" height="200" rx="10" fill="white" stroke="#6B7280" stroke-width="2"/>
+  </g>
+  <text x="865" y="155" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#374151" text-anchor="middle">DATA PLANE</text>
+
+  <!-- Workstation icon -->
+  <rect x="815" y="170" width="100" height="60" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <rect x="825" y="180" width="80" height="40" rx="2" fill="#1F2937"/>
+  <text x="865" y="205" font-family="Arial, sans-serif" font-size="11" fill="#10B981" text-anchor="middle">mq-consumer</text>
+  <rect x="840" y="232" width="50" height="6" rx="2" fill="#9CA3AF"/>
+
+  <text x="865" y="260" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1E293B" text-anchor="middle">Arch Workstation</text>
+  <text x="865" y="275" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">192.168.1.43</text>
+  <text x="865" y="290" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Python Container</text>
+
+  <rect x="800" y="305" width="130" height="18" rx="4" fill="#F3F4F6"/>
+  <text x="865" y="318" font-family="Arial, sans-serif" font-size="9" fill="#4B5563" text-anchor="middle">Docker • BLPOP</text>
+
+  <!-- ==================== IBM CLOUD BOX ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="30" y="130" width="200" height="220" rx="12" fill="white" stroke="#0062FF" stroke-width="2"/>
+    <rect x="30" y="130" width="200" height="35" rx="12" fill="url(#ibmGrad)"/>
+    <rect x="30" y="153" width="200" height="12" fill="url(#ibmGrad)"/>
+  </g>
+  <text x="130" y="155" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">IBM Cloud VPC</text>
+
+  <!-- IBM Server Icon -->
+  <rect x="90" y="185" width="80" height="55" rx="4" fill="#DBEAFE" stroke="#0062FF" stroke-width="1.5"/>
+  <rect x="100" y="195" width="60" height="7" rx="2" fill="#0062FF"/>
+  <rect x="100" y="207" width="60" height="7" rx="2" fill="#0062FF"/>
+  <rect x="100" y="219" width="60" height="7" rx="2" fill="#0062FF"/>
+  <circle cx="155" cy="198" r="2" fill="#22C55E"/>
+  <circle cx="155" cy="210" r="2" fill="#22C55E"/>
+  <circle cx="155" cy="222" r="2" fill="#22C55E"/>
+
+  <text x="130" y="260" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1E293B" text-anchor="middle">mq-producer</text>
+  <text x="130" y="275" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Python Container</text>
+  <text x="130" y="290" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Events every 5s</text>
+
+  <rect x="55" y="305" width="150" height="18" rx="4" fill="#DBEAFE"/>
+  <text x="130" y="318" font-family="Arial, sans-serif" font-size="9" fill="#1E40AF" text-anchor="middle">cx2-2x4 • us-south • ~$0.09/hr</text>
+
+  <!-- ==================== AWS BOX ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="280" y="130" width="200" height="220" rx="12" fill="white" stroke="#FF9900" stroke-width="2"/>
+    <rect x="280" y="130" width="200" height="35" rx="12" fill="url(#awsGrad)"/>
+    <rect x="280" y="153" width="200" height="12" fill="url(#awsGrad)"/>
+  </g>
+  <text x="380" y="155" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Amazon Web Services</text>
+
+  <!-- Redis Icon -->
+  <rect x="340" y="180" width="80" height="60" rx="6" fill="#FEF3C7" stroke="#FF9900" stroke-width="1.5"/>
+  <text x="380" y="210" font-family="Arial, sans-serif" font-size="22" fill="#DC2626" text-anchor="middle">&#x2B22;</text>
+  <text x="380" y="232" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#B91C1C" text-anchor="middle">Redis 7</text>
+
+  <text x="380" y="260" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1E293B" text-anchor="middle">mq-redis</text>
+  <text x="380" y="275" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Message Broker</text>
+  <text x="380" y="290" font-family="Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Port 6379 • FIFO</text>
+
+  <rect x="305" y="305" width="150" height="18" rx="4" fill="#FEF3C7"/>
+  <text x="380" y="318" font-family="Arial, sans-serif" font-size="9" fill="#B45309" text-anchor="middle">t2.micro • us-east-2 • FREE TIER</text>
+
+  <!-- ==================== DATA FLOW ARROWS ==================== -->
+
+  <!-- IBM to AWS (RPUSH) -->
+  <line x1="230" y1="215" x2="335" y2="215" stroke="#0EA5E9" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <rect x="255" y="200" width="55" height="16" rx="3" fill="#0EA5E9"/>
+  <text x="282" y="212" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">RPUSH</text>
+
+  <!-- AWS to Arch Workstation (BLPOP) -->
+  <path d="M 480 215 L 510 215 L 510 395 L 865 395 L 865 355" stroke="#0EA5E9" stroke-width="3" fill="none" stroke-dasharray="8,4"/>
+  <polygon points="865,360 860,375 870,375" fill="#0EA5E9"/>
+  <rect x="650" y="385" width="55" height="16" rx="3" fill="#0EA5E9"/>
+  <text x="677" y="397" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">BLPOP</text>
+
+  <!-- ==================== ORCHESTRATION LINES ==================== -->
+
+  <!-- n8n orchestration: goes out of green box, up above blue/orange boxes, then down to each -->
+  <!-- Main line from laptop going left and up -->
+  <path d="M 545 230 L 520 230 L 520 115 L 130 115" stroke="#EA4B71" stroke-width="2" stroke-dasharray="4,2" fill="none"/>
+
+  <!-- Connector down to IBM Cloud -->
+  <path d="M 130 115 L 130 130" stroke="#EA4B71" stroke-width="2" stroke-dasharray="4,2" fill="none" marker-end="url(#arrowheadPink)"/>
+
+  <!-- Connector to AWS (branch from main line) -->
+  <path d="M 380 115 L 380 130" stroke="#EA4B71" stroke-width="2" stroke-dasharray="4,2" fill="none" marker-end="url(#arrowheadPink)"/>
+
+  <!-- Label for orchestration -->
+  <rect x="230" y="103" width="100" height="14" rx="3" fill="#FCE7F3"/>
+  <text x="280" y="113" font-family="Arial, sans-serif" font-size="8" fill="#BE185D" text-anchor="middle">n8n Orchestration</text>
+
+  <!-- ==================== LEGEND BOX ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="30" y="420" width="480" height="110" rx="10" fill="white" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+  <text x="50" y="445" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#1E293B">Legend</text>
+
+  <!-- Data flow legend -->
+  <line x1="50" y1="470" x2="100" y2="470" stroke="#0EA5E9" stroke-width="3"/>
+  <text x="110" y="474" font-family="Arial, sans-serif" font-size="10" fill="#64748B">Data Flow (Redis Protocol)</text>
+
+  <!-- Orchestration legend -->
+  <line x1="50" y1="495" x2="100" y2="495" stroke="#EA4B71" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="110" y="499" font-family="Arial, sans-serif" font-size="10" fill="#64748B">n8n Orchestration (SSH/Terraform)</text>
+
+  <!-- Environment boxes -->
+  <rect x="280" y="460" width="12" height="12" rx="2" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="300" y="470" font-family="Arial, sans-serif" font-size="10" fill="#64748B">On-Premises</text>
+
+  <rect x="280" y="482" width="12" height="12" rx="2" fill="#DBEAFE" stroke="#0062FF" stroke-width="1"/>
+  <text x="300" y="492" font-family="Arial, sans-serif" font-size="10" fill="#64748B">IBM Cloud</text>
+
+  <rect x="280" y="504" width="12" height="12" rx="2" fill="#FEF3C7" stroke="#FF9900" stroke-width="1"/>
+  <text x="300" y="514" font-family="Arial, sans-serif" font-size="10" fill="#64748B">AWS</text>
+
+  <!-- Roles -->
+  <rect x="380" y="460" width="12" height="12" rx="2" fill="#FCE7F3" stroke="#EA4B71" stroke-width="1"/>
+  <text x="400" y="470" font-family="Arial, sans-serif" font-size="10" fill="#64748B">Control Plane (n8n)</text>
+
+  <rect x="380" y="482" width="12" height="12" rx="2" fill="#F3F4F6" stroke="#6B7280" stroke-width="1"/>
+  <text x="400" y="492" font-family="Arial, sans-serif" font-size="10" fill="#64748B">Data Plane (Apps)</text>
+
+  <!-- ==================== KEY METRICS ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="520" y="420" width="450" height="110" rx="10" fill="white" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+  <text x="540" y="445" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#1E293B">Environment Summary</text>
+
+  <text x="540" y="470" font-family="Arial, sans-serif" font-size="10" fill="#64748B">
+    <tspan font-weight="bold" fill="#059669">On-Prem:</tspan> Laptop (Control) + Arch Workstation (Consumer)
+  </text>
+  <text x="540" y="492" font-family="Arial, sans-serif" font-size="10" fill="#64748B">
+    <tspan font-weight="bold" fill="#0062FF">IBM Cloud:</tspan> VPC VSI in us-south (Producer)
+  </text>
+  <text x="540" y="514" font-family="Arial, sans-serif" font-size="10" fill="#64748B">
+    <tspan font-weight="bold" fill="#FF9900">AWS:</tspan> EC2 in us-east-2 (Redis Broker)
+  </text>
+
+  <!-- ==================== FOOTER ==================== -->
+  <text x="500" y="560" font-family="Arial, sans-serif" font-size="11" fill="#64748B" text-anchor="middle">Terraform + Docker + Redis + n8n Workflow Automation</text>
+  <text x="500" y="580" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#1E293B" text-anchor="middle">Presented by Novique.AI</text>
+</svg>

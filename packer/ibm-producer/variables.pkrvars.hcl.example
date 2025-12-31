@@ -1,0 +1,8 @@
+# IBM Cloud Packer Variables
+# Copy this file to variables.pkrvars.hcl and fill in your values
+
+ibm_api_key       = "YOUR_IBM_API_KEY"
+ibm_region        = "us-south"
+image_name        = "n8n-lab-producer-image"
+subnet_id         = "YOUR_SUBNET_ID"
+resource_group_id = "YOUR_RESOURCE_GROUP_ID"

@@ -33,7 +33,7 @@ This setup allows you to:
 ## 📁 Files
 
 ```
-/home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand/
+/home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand/
 ├── main.tf              # Terraform configuration
 ├── variables.tf         # Variable definitions
 ├── providers.tf         # IBM Cloud provider setup
@@ -65,7 +65,7 @@ This setup allows you to:
 ### Option 2: Manual Docker Commands
 
 ```bash
-cd /home/clay/Documents/GitHub/n8n.mcp/terraform/ibm-vpc-ondemand
+cd /home/clay/IDE/tools/n8n.mcp/terraform/ibm-vpc-ondemand
 
 # Initialize
 docker run --rm -v $(pwd):/workspace -w /workspace hashicorp/terraform:latest init

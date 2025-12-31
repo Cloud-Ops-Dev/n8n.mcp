@@ -1,0 +1,199 @@
+{
+  "name": "Message Queue - Stop Apps",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "aws_ec2_ip",
+              "value": "REPLACE_WITH_AWS_EC2_IP"
+            },
+            {
+              "name": "ibm_vsi_ip",
+              "value": "REPLACE_WITH_IBM_VSI_IP"
+            }
+          ]
+        }
+      },
+      "name": "Set Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "id": "set-config"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/clay/.ssh/R_Smurf_001.pem ubuntu@{{ $json.aws_ec2_ip }} 'docker stop mq-redis && docker rm mq-redis' 2>&1 || echo 'Redis container not found or already stopped'"
+      },
+      "name": "Stop Redis",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 200],
+      "id": "stop-redis"
+    },
+    {
+      "parameters": {
+        "command": "=ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/clay/.ssh/id_ed25519 root@{{ $node[\"Set Configuration\"].json.ibm_vsi_ip }} 'docker stop mq-producer && docker rm mq-producer' 2>&1 || echo 'Producer container not found or already stopped'"
+      },
+      "name": "Stop Producer",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "stop-producer"
+    },
+    {
+      "parameters": {
+        "command": "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/clay/.ssh/id_ed25519 clayton@192.168.1.43 'docker stop mq-consumer && docker rm mq-consumer' 2>&1 || echo 'Consumer container not found or already stopped'"
+      },
+      "name": "Stop Consumer",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 400],
+      "id": "stop-consumer"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "All Apps Stopped Successfully"
+            },
+            {
+              "name": "redis_result",
+              "value": "={{ $node[\"Stop Redis\"].json.stdout }}"
+            },
+            {
+              "name": "producer_result",
+              "value": "={{ $node[\"Stop Producer\"].json.stdout }}"
+            },
+            {
+              "name": "consumer_result",
+              "value": "={{ $node[\"Stop Consumer\"].json.stdout }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "message",
+              "value": "All message queue containers stopped. Infrastructure still running."
+            },
+            {
+              "name": "next_step",
+              "value": "To tear down infrastructure, run the EC2/VSI tear-down workflows."
+            }
+          ]
+        }
+      },
+      "name": "Format Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "format-results"
+    },
+    {
+      "parameters": {
+        "command": "=/scripts/workflow-logger.sh \"Message Queue - Stop Apps\" \"SUCCESS\" \"Stopped all containers\""
+      },
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "log-execution"
+    },
+    {
+      "parameters": {
+        "content": "## Message Queue - Stop Apps\n\n**Stops containers on all 3 systems:**\n1. mq-redis on AWS EC2\n2. mq-producer on IBM VSI\n3. mq-consumer on Arch Workstation\n\n**Note:** This only stops the\napplication containers.\n\n**Infrastructure remains running!**\n\nTo fully tear down and stop costs:\n1. Run IBM VSI Tear Down workflow\n2. Run AWS EC2 Tear Down workflow\n\n**Update IPs in 'Set Configuration'\nbefore running!**",
+        "height": 320,
+        "width": 340
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 520],
+      "id": "sticky-note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Configuration": {
+      "main": [
+        [
+          {
+            "node": "Stop Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop Redis": {
+      "main": [
+        [
+          {
+            "node": "Stop Producer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop Producer": {
+      "main": [
+        [
+          {
+            "node": "Stop Consumer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop Consumer": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["message-queue", "stop", "cleanup"]
+}

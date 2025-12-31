@@ -1,0 +1,10 @@
+services:
+  consumer:
+    build: .
+    container_name: mq-consumer
+    restart: unless-stopped
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-localhost}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - QUEUE_NAME=${QUEUE_NAME:-demo-queue}
+      - BLOCK_TIMEOUT=${BLOCK_TIMEOUT:-0}

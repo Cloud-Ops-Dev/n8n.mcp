@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  producer:
+    image: mq-producer:latest
+    container_name: mq-producer
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-localhost}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - QUEUE_NAME=${QUEUE_NAME:-demo-queue}
+      - MESSAGE_INTERVAL=${MESSAGE_INTERVAL:-5}
